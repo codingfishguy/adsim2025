@@ -45,7 +45,7 @@ require(kableExtra)
 # Put any library imports and other preamble here.
 ```
 
-# Filtering and smoothing for a nonlinear state space model
+# Question 1: Filtering and smoothing for a nonlinear state space model
 
 ```{r}
 #| echo: False
@@ -61,9 +61,9 @@ for (i in 2:201){
 }
 ```
 
-## The SIR particle filter
+## a.
 
-### 1. Sampling
+### Sampling from the SIR particle filter
 
 For this problem, I chose as my importance density $q(x_n|y_n, x_{n-1})$ an approximation of the optimal proposal (that is $p(x_n|y_n, x_{n-1})$), by linearisations similar to the extended Kalman Filter (EKF). Although a bootstrap proposal would be easier, I felt the density $g(y_n|x_n)$ was relatively informative (or 'peaky'), which meant a more informative proposal seemed appropriate. Additionally, the notes suggest the EKF can give reasonable answers for models where the non-linearity is independent of the noise, which is the case for our model, as neither $V_n$ or $W_n$ appear in non-linear functions. 
 
@@ -224,43 +224,130 @@ for (n in times) {
 
 ```
 
+### Sampling using a particle smoothing algorithm
+
+For this question I chose to use...
+
 
 
 
 ### 2. Path Degeneracy
 
-Plotting the final simulated trajectories $\bar{X}^i_{0:200}$ of the SIR algorithm in @fig-3 illustrates the path degeneracy phenomenon well.
+The SIR filter has clear path degeneracy. Though this is harder to make out from the plot of the paths of all particles in @fig-3, plotting the paths from n=190 onwards and comparing this to the paths from n=0 to 20 makes it evident. In fact there is only a single path when going back from n=154.
 
 
 ```{r}
 #| echo: False
 #| label: fig-3
-#| fig-cap: "Path Degeneracy Plot"
+#| fig-cap: "Path Degeneracy Plots"
+#| fig-width: 10
+#| fig-height: 4
 
-
-anc <- SIR50$ancestors
-paths <- matrix(rep(0,201*50), nrow=50, ncol=201)
-paths[,201] <- sir50[,201]
-
-
-idx <- 201
-while (idx>1){
-  for (i in 1:50){
-    ancestor <- sir50[anc[i,idx], idx-1]
-    paths[i,idx-1] <- ancestor
-      
+path_generator <- function(anc, samples){
+  paths <- matrix(0, nrow=length(samples[,1]), ncol=201)
+  paths[,201] <- samples[,201]
+  indices <- 1:length(samples[,1])
+  idx <- 201
+  while (idx > 1) {
+    indices <- anc[indices, idx]
+    paths[, idx-1] <- samples[indices, idx-1]
+    idx <- idx - 1
   }
-  idx <- idx-1
+  return(paths)
 }
 
 
-matplot(t(paths), type = "l", lty = 1, col = rgb(0, 0, 0, 0.01),
+paths50 <- path_generator(SIR50$ancestors, SIR50$samples)
+matplot(t(paths50), type = "l", lty = 1, col = rgb(0, 0, 0, 0.1),
         xlab = "Time", ylab = "Value")
+```
 
+```{r}
+#| echo: False
+#| label: fig-4
+#| fig-cap: "Visualising the start and end of the paths"
+#| fig-width: 12
+#| fig-height: 4
+par(mfrow=c(1,2))
 
+matplot(t(paths50[,0:20]), type = "l", lty = 1, col = rgb(0, 0, 0, 0.1),
+        xlab = "Time", ylab = "Value")
+matplot(190:200, t(paths50[,190:200]), type = "l", lty = 1,
+        col = rgb(0, 0, 0, 0.1),
+        xlab = "Time", ylab = "Value")
+```
+```{r}
+#| echo: False
+#| output: False
 
+length(unique(paths50[,201]))
+length(unique(paths50[,200]))
+length(unique(paths50[,170]))
+length(unique(paths50[,160]))
+length(unique(paths50[,154]))
+length(unique(paths50[,100]))
+length(unique(paths50[,20]))
+length(unique(paths50[,1]))
 
 ```
+
+
+### 3. Particle Approximations for $E[X_n|y_{0:T}]$ and $E[X_n|y_{0:n}]$
+
+The following plots visualise 
+
+```{r}
+#| echo: False
+#| fig-cap: "Filter vs Smoothing Estimates"
+#| fig-width: 12
+#| fig-height: 4
+
+EX_smooth <- colMeans(paths50)
+EX_filter <- colMeans(SIR50$samples)
+
+plot(1:201, EX_filter, type="l", lwd=2,
+     xlab="Time", ylab="Expectation",
+     ylim = range(c(EX_filter, EX_smooth, x)),
+     col="blue")
+
+lines(1:201, EX_smooth, col="black", lwd=2)
+lines(1:201, x, col="red", lty=2, lwd=2)
+
+```
+
+
+```{r}
+#| echo: False
+#| fig-cap: "n=500 Smoothing Estimates"
+#| fig-width: 12
+#| fig-height: 4
+
+paths500 <- path_generator(SIR500$ancestors, SIR500$samples)
+
+
+EX_smooth <- colMeans(paths500)
+plot(1:201, EX_smooth, type="l", lwd=2,
+     xlab="Time", ylab="E[X_n | y_{0:T}]")
+
+lines(1:201, x, col="red", lty=2, lwd=2)
+
+```
+
+```{r}
+#| echo: False
+#| fig-cap: "n=50 Filter Estimates"
+#| fig-width: 12
+#| fig-height: 4
+
+EX_filter <- colMeans(SIR500$samples)
+plot(1:201, EX_filter, type="l", lwd=2,
+     xlab="Time", ylab="E[X_n | y_{0:n}]")
+
+lines(1:201, x, col="red", lty=2, lwd=2)
+
+```
+
+
 
 # Code Appendix {#sec-code-appendix}
 
