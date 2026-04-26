@@ -192,7 +192,9 @@ sir50 <- SIR50$samples
 unweighted_sir50 <- SIR50$unweighted
 weights_sir50 <- SIR50$sample_weights
 
-SIR500 <- SIR(500)
+system.time({
+  SIR500 <- SIR(500)
+})
 sir500 <- SIR500$samples
 unweighted_sir500 <- SIR500$unweighted
 weights_sir500 <- SIR500$sample_weights
@@ -244,6 +246,7 @@ For this question I chose to use a Forward Filtering Backwards Smoothing (FFBSm)
 
 ```{r}
 #| echo: False
+#| output: False
 
 ######
 #Question 1b
@@ -289,8 +292,13 @@ ffbsm <- function(samples, weights){
   return(back_weights)
 }
 
-ffbsm_weights1 <- ffbsm(unweighted_sir50, weights_sir50)
-ffbsm_weights2 <- ffbsm(unweighted_sir500, weights_sir500)
+system.time({
+  ffbsm_weights1 <- ffbsm(unweighted_sir50, weights_sir50)
+})
+
+system.time({
+  ffbsm_weights2 <- ffbsm(unweighted_sir500, weights_sir500)
+})
 
 ```
 
@@ -566,9 +574,13 @@ legend("topright",
 
 ### 4. Comments on results
 
-Visually speaking, when comparing the SIR approximation of $p(x_n|y_{0:n})$ to the FFBSm approximation of $p(x_n|y_{0:T})$ the FFBSm approach yields a much 'smoother' density, though I would not say the results seem much more accurate than the SIR approximation alone. This is also reflected in the increased variance of the filter compared to the smoother, seen in question 3. 
+Visually speaking, when comparing the SIR approximation of $p(x_n|y_{0:n})$ to the FFBSm approximation of $p(x_n|y_{0:T})$ the FFBSm approach yields a much 'smoother' density, though I would not say the results seem more accurate than the SIR approximation in predicting the hidden states. The 'smoothness' is also reflected in the increased variance of the filter compared to the smoother, seen in question 3, though again, it seems all algorithms are still able to calculate $E[X_n|y_{0:T}]$ to similar degrees of accuracy.
 
-Smoothing uses more information than filtering and is offline, whereas filtering is online. Smoothing is also more necessary for parameter estimation than filtering.
+Smoothing uses more information than filtering and is offline, whereas filtering is online. Though online algorithms are more useful when real-time parameter updates are sought after, having well-designed smoothing algorithms is necessary for parameter estimation.
+
+Increasing N to 500 from 50 uniformly improved estimation accuracy in calculating the hidden state for all algorithms. I took T=200, though simulated 201 samples from the true model, as there was also an $x_0$ and $y_0$ term. The forward run of the SIR filter used multinomial resampling, as the basic version seemed to perform decently in terms of accuracy, though more advanced resampling techniques *could* have reduced the variance of estimates (they likely still would have been longer than the smoothers).
+
+The most computationally expensive algorithm by far was the FFBSm implementation with N=500, as it has a cost of $O(N^2T)$, leading to the largest runtime. On my device, the implementation of the forward run of the SIR algorithm (with N=500) took 0.65 seconds compared to 104 seconds for the implementation of the FFBSm algorithm. 
 
 
 
