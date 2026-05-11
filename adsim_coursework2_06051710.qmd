@@ -446,7 +446,7 @@ unique_particles <- function(samples, weights){
   return(unique_counts)
 }
 
-plot(1:201, unique_particles(sir50, ffbsm_weights1),
+plot(1:201, unique_particles(unweighted_sir50, ffbsm_weights1),
      xlab="Time",
      ylab="Number of Unique particles")
 
@@ -596,7 +596,7 @@ $$
 \hat{S}_n^{\theta} = \int \left[ \sum_{k=0}^{n} x_k \right] \hat{p}_{\theta}(dx_{0:n} \mid y_{0:n})
 $$
 
-Where $\hat{p}_{\theta}(dx_{0:n}|y_{0:n})$ is approximated with the SIR filter using the paths created in part 2, compared to its smoothing approximation in part 1b. Of course, the FFBSm algorithm does not return estimates of the full path, however, as the smoothed additive functional can be viewed as the expectation of the sum of $x_k$s, the expectation can be taken inside by linearity, leading to the sum over all k of $E[X_k|y_{0:n}]$, which can be calculated using FFBSm. 
+Where $\hat{p}_{\theta}(dx_{0:n}|y_{0:n})$ is approximated with the SIR filter using the paths created in part 2 up to time n, compared to its smoothing approximation in part 1b. Of course, the FFBSm algorithm does not return estimates of the full path, however, as the smoothed additive functional can be viewed as the expectation of the sum of $x_k$s, the expectation can be taken inside by linearity, leading to the sum over all k of $E[X_k|y_{0:n}]$, which can be calculated using FFBSm. 
 
 Using just the SIR filter leads to the following theoretical bound for the variance:
 
@@ -611,80 +611,90 @@ $$
 $$
 where $H_{\theta}$ is a constant that does not depend on n.
 
-To numerically verify the above conditions, I run both algorithms as specified in earlier parts 50 times in total, with N=50 to reduce computational cost, as the focus is on dependence on $n$. Specifically, the SIR filter will be run 50 times each for $n=10,50,100,150,200$, with the FFBSm algorithm over each run as well. Each time the smoothed additive functional will be computed using both methods and then (for each value of n) the empirical variance of these estimates will be calculated for both a) and b).
+To numerically verify the above conditions, I run both algorithms as specified in earlier parts 50 times in total, with N=50 to reduce computational cost, as the focus is on dependence on $n$. For each run, I generate one forward particle system up to T=200, then for $n=10,50,100,150,200$ I calculate the smoothed additive functional using both a) and b) as described earlier.
 
 This will lead to a table including empirical variance calculations for each value of n in parts a) and b) as well as a plot of how empirical variance changes with increased n. Assessment of whether the theoretical bounds hold can be verified by assessing whether the plot is approximately quadratic or linear (it should be quadratic for the SIR filter and linear for the FFBSm algorithm). 
 
 
 ### 6. Implementation of above procedure
 
-The empirical variance was calculated to be @fig-61 for both the SIR filter and the FFBSm algorithm. As is clear, the theoretical bounds did not seem evident; increasing n from 100 to 150 actually reduced the empirical variance of the smoothed additive functional (with both methods!). As such, these results can definitely not be used to verify the theoretical bounds above (likely due to some implementation error in my code), though at the very least, the variance of the SIR filter was above the variance of the FFBSm algorithm, as expected.
+The empirical variance was calculated to be @fig-61 for both the SIR filter and the FFBSm algorithm. Though the variance did grow with n for both algorithms and appeared to grow faster for the SIR filter, it is unclear whether this growth clearly seems quadratic vs linear. As such, this numerical experiment does not seem to fully verify the theoretical bounds, though it does not violate them either. Increasing N would likely better reveal whether the asymptotic convergence rates hold.
+
 
 ```{r}
 #| echo: False
 
 #####
-#Question 6
+# Question 6
 #####
 
-set.seed(1)
+set.seed(10)
 
-additive_path_estimator <- function(paths, n){
-  row_sums <- rowSums(paths[,1:n])
-  mean(row_sums)
+# Estimate additive functional from reconstructed SIR paths
+additive_path_estimator <- function(paths){
+  mean(rowSums(paths))
 }
 
-additive_ffbsm_estimator <- function(samples, smooth_weights, n){
-  estimate <- 0
-  for(k in 1:n){
-    estimate <- estimate +
-      sum(samples[,k] * smooth_weights[,k])
-  }
-  return(estimate)
+# Estimate additive functional from FFBSm marginal smoothing weights
+additive_ffbsm_estimator <- function(samples, smooth_weights){
+  sum(colSums(samples * smooth_weights))
 }
 
-n_vals <- c(10, 50, 100, 150, 200)
+# Values of n to check
+n_vals <- c(10,50,100,150,200)
 
-sir_vars <- numeric(length(n_vals))
-ffbsm_vars <- numeric(length(n_vals))
-
+# Total independent runs
 M <- 50
+N <- 50
+T <- 200
 
-for(idx in seq_along(n_vals)){
+# Store estimates:
+# rows = independent runs, columns = n values
+sir_estimates_mat <- matrix(NA, nrow = M, ncol = length(n_vals))
+ffbsm_estimates_mat <- matrix(NA, nrow = M, ncol = length(n_vals))
 
-  n <- n_vals[idx]
-
-  sir_estimates <- numeric(M)
-  ffbsm_estimates <- numeric(M)
-
-  for(m in 1:M){
-
-    pf <- SIR(50, n)
-
-    paths <- path_generator(
-      pf$ancestors,
-      pf$samples #using resampled particles
+for (m in 1:M) {
+  
+  # One particle filter run up to T = 200
+  pf <- SIR(N, T)
+  for (idx in seq_along(n_vals)) {
+    n <- n_vals[idx]
+    cols <- 1:(n + 1)
+  
+    # SIR path-space estimator
+    
+    paths_prefix <- path_generator(
+      anc = pf$ancestors[, cols, drop = FALSE],
+      samples = pf$samples[, cols, drop = FALSE]
     )
-
-    bw <- ffbsm(
-      pf$unweighted,
-      pf$sample_weights
+    
+    sir_estimates_mat[m, idx] <- additive_path_estimator(paths_prefix)
+    
+    # FFBSm estimator
+    
+    # Apply FFBSm only to the particle system up to time n,
+    # so the target is p(x_0:n | y_0:n), not p(x_0:n | y_0:T)
+    bw_prefix <- ffbsm(
+      samples = pf$unweighted[, cols, drop = FALSE],
+      weights = pf$sample_weights[, cols, drop = FALSE]
     )
-
-    sir_estimates[m] <-
-      additive_path_estimator(paths, n+1)
-
-    ffbsm_estimates[m] <-
-      additive_ffbsm_estimator(
-        pf$unweighted,
-        bw,
-        n+1
-      )
+    
+    ffbsm_estimates_mat[m, idx] <- additive_ffbsm_estimator(
+      samples = pf$unweighted[, cols, drop = FALSE],
+      smooth_weights = bw_prefix
+    )
   }
-
-  sir_vars[idx] <- var(sir_estimates)
-  ffbsm_vars[idx] <- var(ffbsm_estimates)
 }
+
+# Empirical variances over the 50 independent runs
+sir_vars <- apply(sir_estimates_mat, 2, var)
+ffbsm_vars <- apply(ffbsm_estimates_mat, 2, var)
+
+variance_results <- data.frame(
+  n = n_vals,
+  SIR_Variance = sir_vars,
+  FFBSm_Variance = ffbsm_vars
+)
 
 ```
 
@@ -692,20 +702,8 @@ for(idx in seq_along(n_vals)){
 #| echo: False
 #| label: fig-61
 #| fig-width: 12
-#| fig-cap: "Empirical variance estimates table"
+#| fig-cap: "Empirical variance estimates for the smoothed additive functional"
 #| fig-height: 4
-
-
-# Variance results
-variance_results <- data.frame(
-  n = c(10, 50, 100, 150, 200),
-  SIR_Variance = sir_vars,
-  FFBSm_Variance = ffbsm_vars
-)
-
-# Display nice table
-library(knitr)
-library(kableExtra)
 
 kable(
   variance_results,
@@ -1056,41 +1054,286 @@ knitr::kable(
 
 ## 2. Discussion of the Results
 
-The maximum likelihood estimates of $\sigma^2$ under $y^1_{0:T}$ were uniformly better than the estimates of $\sigma^2$ under $y^2_{0:T}$. This was expected, as Model 2 is nonlinear, so its likelihood is harder to estimate than the linear Model 1 (this was the entire motivation behind using particle filters in the course). Examining the actual data vectors simulated also explains this phenomenon; the variance of $y^1_{0:T}$ was 1.56 compared to 1.88 for $y^2_{0:T}$...
+The maximum likelihood estimates of $\sigma^2$ for $y^1_{0:T}$ were consistently closer to the true value than the estimates of $\sigma^2$ for $y^2_{0:T}$. This was expected, as Model 2 is nonlinear, so its likelihood is harder to estimate than the linear Model 1. Specifically, the particle filters did a worse job at estimating the likelihood of the data vector  $y^2_{0:T}$, as even under Model 2 the bootstrap proposal does not incorporate the current observation (which seems more informative under Model 2). In contrast, the particle approximations of $y^1_{0:T}$ under Model 1 lead to a likelihood estimate almost as accurate as the ideal marginal likelihood, with differences likely due to Monte Carlo noise from the particle filter. 
 
-When considering what methods performed best and worst, they were also the ones expected. For example, having an ideal marginal likelihood of the data under Model 1 when Model 1 was the true data generating process led to the best estimate of $\sigma^2$, whereas taking the likelihood of the data under Model 1 when Model 2 was the true DGP led to the worst estimates of $sigma^2$. Additionally, using a particle filter with a bootstrap proposal to estimate the likelihood worked well for Model 1 (the estimate was almost as close as the ideal marginal likelihood version!), though not so well for Model 2. This is likely because bootstrap proposals typically perform well with non 'peaky' likelihoods, whereas the exponential term in Model 2 is relatively informative. 
+The superior performance of estimation of the likelihood of $y^1_{0:T}$ can also be understood by looking at the actual data simulated. @fig-data-q2 further supports why using a bootstrap proposal works better for it; $y^2_{0:T}$ is clearly more affected by (especially extreme) values of the latent state, suggesting it should be taken into account when designing the proposal.
 
-
-
-
-
+Using the estimates of $\sigma^2$, the accuracy of each model can also be seen in @fig-fitted-sim-y1 and @fig-fitted-sim-y2. To produce these figures, I simulated 100 datasets from Models 1 and 2 using the MLE estimates from Part 1 and constructed empirical 95% simulation envelopes using pointwise quantiles. (I have not included the Kalman filter estimate under Model 1, since its estimate of $\sigma^2$ is extremely close to the SIR approximation.) As can be seen, under Model 1 fluctuations in $y^2_{0:T}$ are underestimated, whereas fluctuations in y1 are overestimated when Model 2 is fit. This supports the likelihood results; the correct model gives a better explanation not only through a larger maximised likelihood but also through simulated datasets whose variability resembles the observed data.
 
 
 ```{r}
+#| echo: false
+#| label: fig-data-q2
+#| fig-cap: "Shared latent trajectory and observations from Models 1 and 2"
+#| fig-width: 12
+#| fig-height: 5
+
+plot(x, type = "l", lwd = 2, ylim = range(c(x, y1, y2)),
+     xlab = "n", ylab = "value")
+lines(y1, col = "blue")
+lines(y2, col = "darkgreen")
+legend("topright",
+       legend = c("x*", "y1", "y2"),
+       col = c("black", "blue", "darkgreen"),
+       lty = 1, lwd = c(2, 1, 1),
+       bty = "n")
+```
+
+```{r}
 #| echo: False
-#| output: False
 
-#####
-#Question 2 Part 2
-#####
+simulate_obs_given_x <- function(x, sigma2, model = 1) {
+  if (model == 1) {
+    y_sim <- x + sqrt(sigma2) * rnorm(length(x))
+  } else {
+    y_sim <- x + sqrt(sigma2) * exp(x / 2) * rnorm(length(x))
+  }
+  return(y_sim)
+}
 
-#Examining the data generated
+B <- 100
 
-range(y2)
-var(y2)
+sim_y1_m1 <- replicate(B, simulate_obs_given_x(x, mle_exact_m1_y1, model = 1))
+sim_y1_m2 <- replicate(B, simulate_obs_given_x(x, mle_pf_m2_y1, model = 2))
 
-range(y1)
-var(y1)
+sim_y2_m1 <- replicate(B, simulate_obs_given_x(x, mle_exact_m1_y2, model = 1))
+sim_y2_m2 <- replicate(B, simulate_obs_given_x(x, mle_pf_m2_y2, model = 2))
+
+plot_sim_envelope <- function(y_obs, sims, main = "") {
+  lower <- apply(sims, 1, quantile, 0.025)
+  upper <- apply(sims, 1, quantile, 0.975)
+  
+  plot(y_obs, type = "l", lwd = 2,
+       ylim = range(c(y_obs, lower, upper)),
+       xlab = "n", ylab = "y",
+       main = main)
+  lines(lower, lty = 3)
+  lines(upper, lty = 3)
+}
+```
+
+```{r}
+#| echo: false
+#| label: fig-fitted-sim-y1
+#| fig-cap: "Simulations from fitted models compared with y1"
+#| fig-width: 12
+#| fig-height: 4
+
+par(mfrow = c(1, 2))
+plot_sim_envelope(y1, sim_y1_m1, "y1 fitted with Model 1")
+plot_sim_envelope(y1, sim_y1_m2, "y1 fitted with Model 2")
+par(mfrow = c(1, 1))
+
+```
+
+```{r}
+#| echo: false
+#| label: fig-fitted-sim-y2
+#| fig-cap: "Simulations from fitted models compared with y2"
+#| fig-width: 12
+#| fig-height: 4
+
+par(mfrow = c(1, 2))
+plot_sim_envelope(y2, sim_y2_m1, "y2 fitted with Model 1")
+plot_sim_envelope(y2, sim_y2_m2, "y2 fitted with Model 2")
+par(mfrow = c(1, 1))
 
 
 ```
 
 
+## 3. Refinement of the above procedure
+
+Firstly, the SIR algorithms could be improved significantly. For example, using adaptive resampling, or most importantly, changing the proposal under Model 2 from a bootstrap to perhaps an Extended Kalman Filter like in Question 1 could be effective (especially as the bootstrap proposal is likely suboptimal, as explained in part 2).
+
+Secondly, instead of using a grid of values for $\sigma^2$ that are evenly spaced, the model could focus more on the regions with higher log likelihoods by running the algorithm again on a finer grid after the first run through.
+
+Finally, brute force methods, such as increasing N, or resorting to multiple independent runs of Particle Filters and then averaging over the results, can improve estimation by reducing the Monte Carlo error associated with calculation of the likelihood.
 
 
+## 4. Alternative Iterative Estimation method
+
+The alternative iterative estimation method I have chosen is the Expectation Maximisation algorithm.
+
+Steps:
+-Compute the function minorant (the integral from the notes) 
+-Once you get this expectation (another integral), explain that you can use SIR filter or FFBSm to calculate it
+-Explain how then you maximise this to get the next iteration value of sigma squared
+
+```{r}
+#| echo: False
+
+## Question 2 Part 4: Particle EM for Model 2
+
+transition_density <- function(x_next, x_prev, rho, tau) {
+  dnorm(x_next, mean = rho * x_prev, sd = tau)
+}
+
+#Finding particle approximation of p(x_{0:n}|y_{0:n})
+bootstrap_pf_model2_store <- function(y, sigma2, rho, tau, N) {
+  Tlen <- length(y)
+  particles <- matrix(0, nrow = N, ncol = Tlen)
+  weights <- matrix(0, nrow = N, ncol = Tlen)
+  ancestors <- matrix(0, nrow = N, ncol = Tlen)
+  
+  ## time 0
+  particles[, 1] <- rnorm(N, mean = 0, sd = 1)
+  logw <- dnorm(
+    y[1],
+    mean = particles[, 1],
+    sd = sqrt(sigma2) * exp(particles[, 1] / 2),
+    log = TRUE
+  )
+  weights[, 1] <- exp(logw - log_sum_exp(logw))
+  ancestors[, 1] <- 1:N
+  
+  ## times 1,...,T
+  for (n in 2:Tlen) {
+    ancestors[, n] <- sample(1:N, size = N, replace = TRUE, prob = weights[, n - 1])
+    particles[, n] <- rho * particles[ancestors[, n], n - 1] + tau * rnorm(N)
+    
+    logw <- dnorm(
+      y[n],
+      mean = particles[, n],
+      sd = sqrt(sigma2) * exp(particles[, n] / 2),
+      log = TRUE
+    )
+    weights[, n] <- exp(logw - log_sum_exp(logw))
+  }
+  
+  return(list(
+    particles = particles,
+    weights = weights,
+    ancestors = ancestors
+  ))
+}
+
+sir_em_statistic <- function(pf, y) {
+  particles <- pf$particles
+  weights <- pf$weights
+  ancestors <- pf$ancestors
+  
+  N <- nrow(particles)
+  Tlen <- ncol(particles)
+  
+  vals <- numeric(N)
+  
+  for (i in 1:N) {
+    path <- numeric(Tlen)
+    idx <- i
+    
+    for (n in Tlen:1) {
+      path[n] <- particles[idx, n]
+      idx <- ancestors[idx, n]
+    }
+    
+    vals[i] <- sum((y - path)^2 * exp(-path))
+  }
+  
+  return(sum(weights[, Tlen] * vals))
+}
+
+ffbsm_em_statistic <- function(pf, y, rho, tau) {
+  particles <- pf$particles
+  weights <- pf$weights
+  
+  N <- nrow(particles)
+  Tlen <- ncol(particles)
+  
+  smooth_weights <- matrix(0, nrow = N, ncol = Tlen)
+  smooth_weights[, Tlen] <- weights[, Tlen]
+  
+  for (n in (Tlen - 1):1) {
+    for (i in 1:N) {
+      total <- 0
+      
+      for (j in 1:N) {
+        denom <- sum(weights[, n] *
+                       transition_density(particles[j, n + 1], particles[, n], rho, tau))
+        
+        if (denom > 0) {
+          total <- total +
+            smooth_weights[j, n + 1] *
+            transition_density(particles[j, n + 1], particles[i, n], rho, tau) /
+            denom
+        }
+      }
+      
+      smooth_weights[i, n] <- weights[i, n] * total
+    }
+    
+    smooth_weights[, n] <- smooth_weights[, n] / sum(smooth_weights[, n])
+  }
+  
+  stat <- 0
+  for (n in 1:Tlen) {
+    h <- (y[n] - particles[, n])^2 * exp(-particles[, n])
+    stat <- stat + sum(smooth_weights[, n] * h)
+  }
+  
+  return(stat)
+}
+
+set.seed(12)
+
+N_em <- 100
+n_iter <- 100
+
+sigma2_sir <- numeric(n_iter + 1)
+sigma2_ffbsm <- numeric(n_iter + 1)
+
+sigma2_sir[1] <- 0.5
+sigma2_ffbsm[1] <- 0.5
+
+for (k in 1:n_iter) {
+  pf_sir <- bootstrap_pf_model2_store(y2, sigma2_sir[k], rho, tau, N_em)
+  S_sir <- sir_em_statistic(pf_sir, y2)
+  sigma2_sir[k + 1] <- S_sir / length(y2)
+  
+  pf_ffbsm <- bootstrap_pf_model2_store(y2, sigma2_ffbsm[k], rho, tau, N_em)
+  S_ffbsm <- ffbsm_em_statistic(pf_ffbsm, y2, rho, tau)
+  sigma2_ffbsm[k + 1] <- S_ffbsm / length(y2)
+}
+
+```
+
+```{r}
+#| echo: false
+#| label: fig-q2-em
+#| fig-cap: "Particle EM estimates of sigma squared for Model 2 using SIR genealogies and FFBSm"
+#| fig-width: 10
+#| fig-height: 4
+
+plot(
+  0:n_iter, sigma2_sir,
+  type = "l", lwd = 2,
+  xlab = "EM iteration",
+  ylab = expression(sigma^2),
+  ylim = range(c(sigma2_sir, sigma2_ffbsm, 1))
+)
+
+lines(0:n_iter, sigma2_ffbsm, lwd = 2, lty = 2, col = "darkgreen")
+abline(h = 1, col = "blue", lty = 3)
+
+legend(
+  "topright",
+  legend = c("SIR genealogies", "FFBSm", "True value"),
+  col = c("black", "darkgreen", "blue"),
+  lty = c(1, 2, 3),
+  lwd = c(2, 2, 1),
+  bty = "n"
+)
+
+final_em_table <- data.frame(
+  Method = c("SIR genealogies", "FFBSm"),
+  `Final estimate of sigma squared` = round(c(tail(sigma2_sir, 1), tail(sigma2_ffbsm, 1)), 4),
+  check.names = FALSE
+)
+
+knitr::kable(final_em_table, format = "pipe")
 
 
-
+```
 
 
 
