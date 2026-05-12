@@ -69,9 +69,27 @@ for (i in 2:201){
 
 ## 1a. Sampling from the SIR particle filter
 
-For this problem, I chose as my importance density $q(x_n|y_n, x_{n-1})$ an approximation of the optimal proposal (that is $p(x_n|y_n, x_{n-1})$), by linearisations similar to the extended Kalman Filter (EKF). Although a bootstrap proposal would be easier, I felt the density $g(y_n|x_n)$ was relatively informative (or 'peaky'), which meant a more informative proposal seemed appropriate. Additionally, the notes suggest the EKF can give reasonable answers for models where the non-linearity is independent of the noise, which is the case for this model, as neither $V_n$ or $W_n$ appear in non-linear functions. 
+For this problem, I chose as my importance density $q(x_n|y_n, x_{n-1})$
+an approximation of the optimal proposal (that is
+$p(x_n|y_n, x_{n-1})$), by linearisations similar to the extended Kalman
+Filter (EKF). Although a bootstrap proposal would be easier, I felt the
+density $g(y_n|x_n)$ was relatively informative (or 'peaky'), which
+meant a more informative proposal seemed appropriate. Additionally, the
+notes suggest the EKF can give reasonable answers for models where the
+non-linearity is independent of the noise, which is the case for this
+model, as neither $V_n$ or $W_n$ appear in non-linear functions.
 
-$X_n$ can be linearly approximated as  $X_n = a_n + A_nX_{n-1} + B_nZ_n$ (where $Z_n \sim N(0,1)$) and $Y_n$ can be approximated as $Y_n = c_n +C_nX_n + W_n$ (where $W_n \sim N(0,1)$), both by a classic Taylor expansion. This leads to $B_n = \sqrt{0.1}$, $C_n = \frac{\psi_{\theta}(X_{n-1},0)}{10}$ and $D_n=1$  (all other variables are not relevant for the proposal). The approximation of the optimal proposal^[this result is taken from the notes] then takes the form $q(x_n|y_n, x_{n-1}) \propto N(m_n(x_{n-1}, y_n), S_n(x_{n-1}))$, where $m_n$ and $S_n$ are defined in @eq-1.
+$X_n$ can be linearly approximated as $X_n = a_n + A_nX_{n-1} + B_nZ_n$
+(where $Z_n \sim N(0,1)$) and $Y_n$ can be approximated as
+$Y_n = c_n +C_nX_n + W_n$ (where $W_n \sim N(0,1)$), both by a classic
+Taylor expansion. This leads to $B_n = \sqrt{0.1}$,
+$C_n = \frac{\psi_{\theta}(X_{n-1},0)}{10}$ and $D_n=1$ (all other
+variables are not relevant for the proposal). The approximation of the
+optimal proposal[^1] then takes the form
+$q(x_n|y_n, x_{n-1}) \propto N(m_n(x_{n-1}, y_n), S_n(x_{n-1}))$, where
+$m_n$ and $S_n$ are defined in @eq-1.
+
+[^1]: this result is taken from the notes
 
 $$
 \begin{aligned}
@@ -83,11 +101,19 @@ m_n(x_{n-1}, y_n) &= S_n(x_{n-1}) \left(10\psi_{\theta}(x_{n-1},0)+ \frac{\psi_{
 \end{aligned}
 $$ {#eq-1}
 
-For $q_{\theta}(x_0|y_0)$ the linearisation just leads to the bootstrap proposal, as linearising the likelihood of $y_0$ around the prior mean leads to $q_{\theta}(x_0|y_0) \sim N(0,1)$ (i.e. the bootstrap in this case).
+For $q_{\theta}(x_0|y_0)$ the linearisation just leads to the bootstrap
+proposal, as linearising the likelihood of $y_0$ around the prior mean
+leads to $q_{\theta}(x_0|y_0) \sim N(0,1)$ (i.e. the bootstrap in this
+case).
 
-Using multinomial resampling and the above proposals then led to the following particle approximations for $p(x_n|y_{0:n})$ in @fig-1 and @fig-2, where the densities are estimated via the default 'density' function in R, which uses a Gaussian kernel and rule-of-thumb bandwidth selector based on the standard deviation of the data. The red dotted line represents the true value of the hidden state, demonstrating how the SIR particle filter performed relatively accurately, even with N=50 (though increasing samples increased accuracy).
-
-
+Using multinomial resampling and the above proposals then led to the
+following particle approximations for $p(x_n|y_{0:n})$ in @fig-1 and
+@fig-2, where the densities are estimated via the default 'density'
+function in R, which uses a Gaussian kernel and rule-of-thumb bandwidth
+selector based on the standard deviation of the data. The red dotted
+line represents the true value of the hidden state, demonstrating how
+the SIR particle filter performed relatively accurately, even with N=50
+(though increasing samples increased accuracy).
 
 ```{r}
 #| echo: False
@@ -246,7 +272,15 @@ for (n in times) {
 
 ### 1b. Sampling using a particle smoothing algorithm
 
-For this question I chose to use a Forward Filtering Backwards Smoothing (FFBSm) algorithm, as I felt it was the best option I know of for particle smoothing problems (and did not require any hyperparameter tuning). It led to the filter approximations in @fig-8 and @fig-9 (via the same smooth kernel density estimate as in 1a) which again seemed accurate in predicting hidden states. The terminology 'smoother' for $p(x_n|y_{0:T})$ seems justified, as visually speaking the density estimates appear 'smoother' than the SIR equivalents, likely due to using more information for their predictions.
+For this question I chose to use a Forward Filtering Backwards Smoothing
+(FFBSm) algorithm, as I felt it was the best option I know of for
+particle smoothing problems (and did not require any hyperparameter
+tuning). It led to the filter approximations in @fig-8 and @fig-9 (via
+the same smooth kernel density estimate as in 1a) which again seemed
+accurate in predicting hidden states. The terminology 'smoother' for
+$p(x_n|y_{0:T})$ seems justified, as visually speaking the density
+estimates appear 'smoother' than the SIR equivalents, likely due to
+using more information for their predictions.
 
 ```{r}
 #| echo: False
@@ -352,12 +386,16 @@ for (n in times) {
 }
 ```
 
-
-
 ### 2a. Path Degeneracy for the SIR filter
 
-The SIR filter has clear path degeneracy (for N=50). This is not clear if the paths of all particles are plotted due to the scale of the data, however, it is clearly demonstrated in @fig-4 where paths from n=190 onwards are plotted and compared to the paths from n=0 to 20. In fact, there is only a single path when going back from n=154^[code for this is in the appendix], suggesting path degeneracy is a strong issue for the SIR filter.
+The SIR filter has clear path degeneracy (for N=50). This is not clear
+if the paths of all particles are plotted due to the scale of the data,
+however, it is clearly demonstrated in @fig-4 where paths from n=190
+onwards are plotted and compared to the paths from n=0 to 20. In fact,
+there is only a single path when going back from n=154[^2], suggesting
+path degeneracy is a strong issue for the SIR filter.
 
+[^2]: code for this is in the appendix
 
 ```{r}
 #| echo: False
@@ -398,6 +436,7 @@ matplot(190:200, t(paths50[,190:200]), type = "l", lty = 1,
         col = rgb(0, 0, 0, 0.1),
         xlab = "Time", ylab = "Value")
 ```
+
 ```{r}
 #| echo: False
 #| output: False
@@ -415,7 +454,14 @@ length(unique(paths50[,1]))
 
 ### 2b. Path Degeneracy for the FFBSm Algorithm
 
-Although it is not possible to view 'paths' generated by the FFBSm Algorithm, as ultimately the forward run is identical to the generic SIR algorithm, the improvement in addressing path degeneracy can be seen in the calculations of particle approximations of $p(x_n|y_{0:T})$. For example, as explained previously, only one unique particle exists among all paths when calculating $p(x_{n}|y_{0:T})$ for $n \leq 154$ with the SIR filter, though in @fig-2b there are almost 20 unique particles even for $n \leq 10$ (though this does vary depending on n).
+Although it is not possible to view 'paths' generated by the FFBSm
+Algorithm, as ultimately the forward run is identical to the generic SIR
+algorithm, the improvement in addressing path degeneracy can be seen in
+the calculations of particle approximations of $p(x_n|y_{0:T})$. For
+example, as explained previously, only one unique particle exists among
+all paths when calculating $p(x_{n}|y_{0:T})$ for $n \leq 154$ with the
+SIR filter, though in @fig-2b there are almost 20 unique particles even
+for $n \leq 10$ (though this does vary depending on n).
 
 ```{r}
 #| echo: False
@@ -452,10 +498,18 @@ plot(1:201, unique_particles(unweighted_sir50, ffbsm_weights1),
 
 ```
 
-
 ### 3. Particle Approximations for $E[X_n|y_{0:T}]$ and $E[X_n|y_{0:n}]$
 
-To work out the SIR approximation of $E[X_n|y_{0:T}]$ I used the paths that I previously calculated to illustrate path degeneracy and calculated their mean. @fig-31 and @fig-32 display the true value of the hidden state at each time n in red, alongside both particle approximations of $E[X_n|y_{0:T}]$ with the FFBSm approximation in green and the SIR approximation in black, as well as the filter approximation of $E[X_n|y_{0:n}]$ in blue. It is clear most approximations are very similar in value calculated, though the variance of the filter is much greater than both approaches used to calculate $p(x_n|y_{0:T})$. 
+To work out the SIR approximation of $E[X_n|y_{0:T}]$ I used the paths
+that I previously calculated to illustrate path degeneracy and
+calculated their mean. @fig-31 and @fig-32 display the true value of the
+hidden state at each time n in red, alongside both particle
+approximations of $E[X_n|y_{0:T}]$ with the FFBSm approximation
+in green and the SIR approximation in black, as well as the filter
+approximation of $E[X_n|y_{0:n}]$ in blue. It is clear most
+approximations are very similar in value calculated, though the variance
+of the filter is much greater than both approaches used to calculate
+$p(x_n|y_{0:T})$.
 
 ```{r}
 #| echo: False
@@ -524,8 +578,6 @@ legend("topright",
 
 ```
 
-
-
 ```{r}
 #| echo: False
 #| label: fig-32
@@ -579,47 +631,89 @@ legend("topright",
 
 ### 4. Comments on results
 
-Visually speaking, when comparing the SIR approximation of $p(x_n|y_{0:n})$ to the FFBSm approximation of $p(x_n|y_{0:T})$ the FFBSm approach yields a much 'smoother' density, though both algorithms seem largely equal in ability to predict hidden states (the red lines always appear in regions with high densities). The 'smoothness' is also reflected in the increased variance of the filter compared to the smoother, seen in question 3, though again, it seems all algorithms are still able to calculate $E[X_n|y_{0:T}]$ to similar degrees of accuracy.
+Visually speaking, when comparing the SIR approximation of
+$p(x_n|y_{0:n})$ to the FFBSm approximation of $p(x_n|y_{0:T})$ the
+FFBSm approach yields a much 'smoother' density, though both algorithms
+seem largely equal in ability to predict hidden states (the red lines
+always appear in regions with high densities). The 'smoothness' is also
+reflected in the increased variance of the filter compared to the
+smoother, seen in question 3, though again, it seems all algorithms are
+still able to calculate $E[X_n|y_{0:T}]$ to similar degrees of accuracy.
 
-Smoothing uses more information than filtering and is offline, whereas filtering is online. Though online algorithms are more useful when real-time parameter updates are sought after, having well-designed smoothing algorithms is necessary for parameter estimation.
+Smoothing uses more information than filtering and is offline, whereas
+filtering is online. Though online algorithms are more useful when
+real-time parameter updates are sought after, having well-designed
+smoothing algorithms is necessary for parameter estimation.
 
-Increasing N to 500 from 50 uniformly improved estimation accuracy in calculating the hidden state for all algorithms, most evidently demonstrated in part 3. I took T=200, though simulated 201 samples from the true model, as there was also an $x_0$ and $y_0$ term. The forward run of the SIR filter used multinomial resampling, as the basic version seemed to perform decently in terms of accuracy, though more advanced resampling techniques *could* have reduced the variance of estimates (they likely still would have had more variance than the smoothers).
+Increasing N to 500 from 50 uniformly improved estimation accuracy in
+calculating the hidden state for all algorithms, most evidently
+demonstrated in part 3. I took T=200, though simulated 201 samples from
+the true model, as there was also an $x_0$ and $y_0$ term. The forward
+run of the SIR filter used multinomial resampling, as the basic version
+seemed to perform decently in terms of accuracy, though more advanced
+resampling techniques *could* have reduced the variance of estimates
+(they likely still would have had more variance than the smoothers).
 
-The most computationally expensive algorithm by far was the FFBSm implementation with N=500, as it has a cost of $O(N^2T)$, leading to the largest runtime. On my device, the implementation of the forward run of the SIR algorithm (with N=500) took 0.65 seconds compared to 104 seconds for the implementation of the FFBSm algorithm. 
-
+The most computationally expensive algorithm by far was the FFBSm
+implementation with N=500, as it has a cost of $O(N^2T)$, leading to the
+largest runtime. On my device, the implementation of the forward run of
+the SIR algorithm (with N=500) took 0.65 seconds compared to 104 seconds
+for the implementation of the FFBSm algorithm.
 
 ### 5. Theoretical Properties for the smoothed additive functional
 
-From the notes, the approximation of the smoothed additive functional for both parts a and b will be:
+From the notes, the approximation of the smoothed additive functional
+for both parts a and b will be:
 
 $$
 \hat{S}_n^{\theta} = \int \left[ \sum_{k=0}^{n} x_k \right] \hat{p}_{\theta}(dx_{0:n} \mid y_{0:n})
 $$
 
-Where $\hat{p}_{\theta}(dx_{0:n}|y_{0:n})$ is approximated with the SIR filter using the paths created in part 2 up to time n, compared to its smoothing approximation in part 1b. Of course, the FFBSm algorithm does not return estimates of the full path, however, as the smoothed additive functional can be viewed as the expectation of the sum of $x_k$s, the expectation can be taken inside by linearity, leading to the sum over all k of $E[X_k|y_{0:n}]$, which can be calculated using FFBSm. 
+Where $\hat{p}_{\theta}(dx_{0:n}|y_{0:n})$ is approximated with the SIR
+filter using the paths created in part 2 up to time n, compared to its
+smoothing approximation in part 1b. Of course, the FFBSm algorithm does
+not return estimates of the full path, however, as the smoothed additive
+functional can be viewed as the expectation of the sum of $x_k$s, the
+expectation can be taken inside by linearity, leading to the sum over
+all k of $E[X_k|y_{0:n}]$, which can be calculated using FFBSm.
 
-Using just the SIR filter leads to the following theoretical bound for the variance:
+Using just the SIR filter leads to the following theoretical bound for
+the variance:
 
 $$
 \mathrm{Var}^N\!\left(\hat{S}_n^{\theta}\right) \geq D_{\theta}\,\frac{n^2}{N}
 $$
 
-where $D_{\theta}$ is a constant that does not depend on n. Meanwhile the smoother will have theoretical bound:
+where $D_{\theta}$ is a constant that does not depend on n. Meanwhile
+the smoother will have theoretical bound:
 
 $$
 \mathrm{Var}^N\!\left(\hat{S}_n^{\theta}\right) \leq H_{\theta}\,\frac{n}{N}
-$$
-where $H_{\theta}$ is a constant that does not depend on n.
+$$ where $H_{\theta}$ is a constant that does not depend on n.
 
-To numerically verify the above conditions, I run both algorithms as specified in earlier parts 50 times in total, with N=50 to reduce computational cost, as the focus is on dependence on $n$. For each run, I generate one forward particle system up to T=200, then for $n=10,50,100,150,200$ I calculate the smoothed additive functional using both a) and b) as described earlier.
+To numerically verify the above conditions, I run both algorithms as
+specified in earlier parts 50 times in total, with N=50 to reduce
+computational cost, as the focus is on dependence on $n$. For each run,
+I generate one forward particle system up to T=200, then for
+$n=10,50,100,150,200$ I calculate the smoothed additive functional using
+both a) and b) as described earlier.
 
-This will lead to a table including empirical variance calculations for each value of n in parts a) and b) as well as a plot of how empirical variance changes with increased n. Assessment of whether the theoretical bounds hold can be verified by assessing whether the plot is approximately quadratic or linear (it should be quadratic for the SIR filter and linear for the FFBSm algorithm). 
-
+This will lead to a table including empirical variance calculations for
+each value of n in parts a) and b) as well as a plot of how empirical
+variance changes with increased n. Assessment of whether the theoretical
+bounds hold can be verified by assessing whether the plot is
+approximately quadratic or linear (it should be quadratic for the SIR
+filter and linear for the FFBSm algorithm).
 
 ### 6. Implementation of above procedure
 
-The empirical variance was calculated to be @fig-61 for both the SIR filter and the FFBSm algorithm. Though the variance did grow with n for both algorithms and appeared to grow faster for the SIR filter, it is unclear whether this growth clearly seems quadratic vs linear. As such, this numerical experiment does not seem to fully verify the theoretical bounds, though it does not violate them either. Increasing N would likely better reveal whether the asymptotic convergence rates hold.
-
+The empirical variance was calculated to be @tbl-61 for both the SIR
+filter and the FFBSm algorithm. Though the variance did grow with n for
+both algorithms and appeared to grow faster for the SIR filter, it is
+unclear whether this growth clearly seems quadratic vs linear. As such,
+this numerical experiment does not seem to fully verify the theoretical
+bounds, though it does not violate them either. Increasing N would
+likely better reveal whether the asymptotic convergence rates hold.
 
 ```{r}
 #| echo: False
@@ -700,10 +794,8 @@ variance_results <- data.frame(
 
 ```{r}
 #| echo: False
-#| label: fig-61
-#| fig-width: 12
-#| fig-cap: "Empirical variance estimates for the smoothed additive functional"
-#| fig-height: 4
+#| label: tbl-61
+#| tbl-cap: "Empirical variance estimates for the smoothed additive functional"
 
 kable(
   variance_results,
@@ -792,10 +884,16 @@ for (i in 2:101){
 }
 ```
 
-
 ## 1. (a and c) Log likelihood of $y_{0:T}^1$
 
-Under model 1, as the process is a Linear Gaussian State space model, using the Kalman filter gives an exact value for $p_{\theta}(y_{0:n})$, while the SIR approximation of the likelihood is calculated by the recursion in the lecture notes. This led to the plot @fig-21a for the different values of $\sigma^2$ on the grid, with the exact value that maximised the likelihood provided in @tbl-mle-y1 (which I take to be the Maximum Likelihood Estimator). The vertical blue line represents the true value of $\sigma^2$.
+Under model 1, as the process is a Linear Gaussian State space model,
+using the Kalman filter gives an exact value for $p_{\theta}(y_{0:n})$,
+while the SIR approximation of the likelihood is calculated by the
+recursion in the lecture notes. This led to the plot @fig-21a for the
+different values of $\sigma^2$ on the grid, with the exact value that
+maximised the likelihood provided in @tbl-mle-y1 (which I take to be the
+Maximum Likelihood Estimator). The vertical blue line represents the
+true value of $\sigma^2$.
 
 ```{r}
 #| echo: False
@@ -960,7 +1058,9 @@ knitr::kable(
 
 ## 1. (b and c) Log likelihood of $y_{0:T}^2$
 
-Similarly to 1a the log likelihood of $y_{0:T}^2$ was estimated under model 1 and 2 (both exactly and with an SIR approximation under model 1). This led to @fig-22a and @tbl-mle-y2. 
+Similarly to 1a the log likelihood of $y_{0:T}^2$ was estimated under
+model 1 and 2 (both exactly and with an SIR approximation under model
+1). This led to @fig-22a and @tbl-mle-y2.
 
 ```{r}
 #| echo: False
@@ -1051,15 +1151,39 @@ knitr::kable(
 
 ```
 
-
 ## 2. Discussion of the Results
 
-The maximum likelihood estimates of $\sigma^2$ for $y^1_{0:T}$ were consistently closer to the true value than the estimates of $\sigma^2$ for $y^2_{0:T}$. This was expected, as Model 2 is nonlinear, so its likelihood is harder to estimate than the linear Model 1. Specifically, the particle filters did a worse job at estimating the likelihood of the data vector  $y^2_{0:T}$, as even under Model 2 the bootstrap proposal does not incorporate the current observation (which seems more informative under Model 2). In contrast, the particle approximations of $y^1_{0:T}$ under Model 1 lead to a likelihood estimate almost as accurate as the ideal marginal likelihood, with differences likely due to Monte Carlo noise from the particle filter. 
+The maximum likelihood estimates of $\sigma^2$ for $y^1_{0:T}$ were
+consistently closer to the true value than the estimates of $\sigma^2$
+for $y^2_{0:T}$. This was expected, as Model 2 is nonlinear, so its
+likelihood is harder to estimate than the linear Model 1. Specifically,
+the particle filters did a worse job at estimating the likelihood of the
+data vector $y^2_{0:T}$, as even under Model 2 the bootstrap proposal
+does not incorporate the current observation (which seems more
+informative under Model 2). In contrast, the particle approximations of
+$y^1_{0:T}$ under Model 1 lead to a likelihood estimate almost as
+accurate as the ideal marginal likelihood, with differences likely due
+to Monte Carlo noise from the particle filter.
 
-The superior performance of estimation of the likelihood of $y^1_{0:T}$ can also be understood by looking at the actual data simulated. @fig-data-q2 further supports why using a bootstrap proposal works better for it; $y^2_{0:T}$ is clearly more affected by (especially extreme) values of the latent state, suggesting it should be taken into account when designing the proposal.
+The superior performance of estimation of the likelihood of $y^1_{0:T}$
+can also be understood by looking at the actual data simulated.
+@fig-data-q2 further supports why using a bootstrap proposal works
+better for it; $y^2_{0:T}$ is clearly more affected by (especially
+extreme) values of the latent state, suggesting it should be taken into
+account when designing the proposal.
 
-Using the estimates of $\sigma^2$, the accuracy of each model can also be seen in @fig-fitted-sim-y1 and @fig-fitted-sim-y2. To produce these figures, I simulated 100 datasets from Models 1 and 2 using the MLE estimates from Part 1 and constructed empirical 95% simulation envelopes using pointwise quantiles. (I have not included the Kalman filter estimate under Model 1, since its estimate of $\sigma^2$ is extremely close to the SIR approximation.) As can be seen, under Model 1 fluctuations in $y^2_{0:T}$ are underestimated, whereas fluctuations in y1 are overestimated when Model 2 is fit. This supports the likelihood results; the correct model gives a better explanation not only through a larger maximised likelihood but also through simulated datasets whose variability resembles the observed data.
-
+Using the estimates of $\sigma^2$, the accuracy of each model can also
+be seen in @fig-fitted-sim-y1 and @fig-fitted-sim-y2. To produce these
+figures, I simulated 100 datasets from Models 1 and 2 using the MLE
+estimates from Part 1 and constructed empirical 95% simulation envelopes
+using pointwise quantiles. (I have not included the Kalman filter
+estimate under Model 1, since its estimate of $\sigma^2$ is extremely
+close to the SIR approximation.) As can be seen, under Model 1
+fluctuations in $y^2_{0:T}$ are underestimated, whereas fluctuations in
+y1 are overestimated when Model 2 is fit. This supports the likelihood
+results; the correct model gives a better explanation not only through a
+larger maximised likelihood but also through simulated datasets whose
+variability resembles the observed data.
 
 ```{r}
 #| echo: false
@@ -1141,24 +1265,124 @@ par(mfrow = c(1, 1))
 
 ```
 
-
 ## 3. Refinement of the above procedure
 
-Firstly, the SIR algorithms could be improved significantly. For example, using adaptive resampling, or most importantly, changing the proposal under Model 2 from a bootstrap to perhaps an Extended Kalman Filter like in Question 1 could be effective (especially as the bootstrap proposal is likely suboptimal, as explained in part 2).
+Firstly, the SIR algorithms could be improved significantly. For
+example, using adaptive resampling, or most importantly, changing the
+proposal under Model 2 from a bootstrap to perhaps an Extended Kalman
+Filter like in Question 1 could be effective (especially as the
+bootstrap proposal is likely suboptimal, as explained in part 2).
 
-Secondly, instead of using a grid of values for $\sigma^2$ that are evenly spaced, the model could focus more on the regions with higher log likelihoods by running the algorithm again on a finer grid after the first run through.
+Secondly, instead of using a grid of values for $\sigma^2$ that are
+evenly spaced, the model could focus more on the regions with higher log
+likelihoods by running the algorithm again on a finer grid after the
+first run through.
 
-Finally, brute force methods, such as increasing N, or resorting to multiple independent runs of Particle Filters and then averaging over the results, can improve estimation by reducing the Monte Carlo error associated with calculation of the likelihood.
-
+Finally, brute force methods, such as increasing N, or resorting to
+multiple independent runs of Particle Filters and then averaging over
+the results, can improve estimation by reducing the Monte Carlo error
+associated with calculation of the likelihood.
 
 ## 4. Alternative Iterative Estimation method
 
-The alternative iterative estimation method I have chosen is the Expectation Maximisation algorithm.
+The alternative iterative estimation method I have chosen is the
+Expectation Maximisation algorithm. The EM algorithm updates a parameter
+$\theta$ by maximising
 
-Steps:
--Compute the function minorant (the integral from the notes) 
--Once you get this expectation (another integral), explain that you can use SIR filter or FFBSm to calculate it
--Explain how then you maximise this to get the next iteration value of sigma squared
+$$
+Q(\theta_k,\theta)
+=
+\int
+\log p_\theta(x_{0:T},y_{0:T})
+\, p_{\theta_k}(x_{0:T}\mid y_{0:T})
+\, dx_{0:T}
+$$
+
+with respect to $\theta$ at iteration k.
+
+For Model 2, $g_{\sigma^2}(y_n\mid x_n)\sim N(x_n,\sigma^2 e^{x_n})$ so
+the complete-data log-likelihood can be written as
+
+$$
+\log p_{\sigma^2}(x_{0:T},y_{0:T})
+=
+C
++
+\sum_{n=0}^T
+\log g_{\sigma^2}(y_n\mid x_n),
+$$
+
+where $C$ is a term that does not depend on $\sigma^2$. Hence,
+
+$$
+\log p_{\sigma^2}(x_{0:T},y_{0:T})
+=
+C
+-
+\frac{T+1}{2}\log(\sigma^2)
+-
+\frac{1}{2\sigma^2}
+\sum_{n=0}^T
+(y_n-x_n)^2 e^{-x_n}.
+$$
+
+Therefore, maximising $Q(\sigma_k^2,\sigma^2)$ with respect to
+$\sigma^2$ is equivalent to maximising
+
+$$
+C
+-
+\frac{T+1}{2}\log(\sigma^2)
+-
+\frac{1}{2\sigma^2}
+\mathbb E_{\sigma_k^2}
+\left[
+\sum_{n=0}^T
+(y_n-x_n)^2 e^{-x_n}
+\mid y_{0:T}
+\right].
+$$
+
+the EM update can be found by differentiating with respect to
+$\sigma^2$, to find
+
+$$
+\sigma_{k+1}^2
+=
+\frac{1}{T+1}
+\mathbb E_{\sigma_k^2}
+\left[
+\sum_{n=0}^T
+(y_n-x_n)^2 e^{-x_n}
+\mid y_{0:T}
+\right].
+$$
+
+The expectation above requires the smoothing distribution
+$p_{\sigma_k^2}(x_{0:T}\mid y_{0:T})$ which is approximated using
+particle filtering and smoothing methods. The SIR algorithm uses a
+standard bootstrap proposal and the FFBSm algorithm is similar to the
+one used in Question 1. The entire expectation/integral is approximated
+using the final weights in the SIR algorithm, as well as reconstructed
+paths, while the FFBSm algorithm uses its marginal smoothing
+distributions $p(x_n|y_{0:T})$ at each time step and computes the
+expectation as a weighted sum over the particles at each time n.
+
+Surprisingly @tbl-q2-em suggests using FFBSm leads to a poorer estimate
+of $\sigma^2$, however, looking at the plot @fig-q2-em, it is evident
+that using SIR alone leads to a higher variance estimate for $\sigma^2$
+(due to path degeneracy). However, it is also clear that using this
+iterative scheme performs better than using a grid-based approach (for
+this problem) as with only N=100 both methods led to an estimate of
+$\sigma^2$ that was closer to the true value than the grid based
+approach. The grid based approach was also subject to greater Monte
+Carlo error, as seen by repeated runs with different seeds, whereas this
+was not as much the case for the EM algorithms (especially using FFBSm).
+
+Additionally, while the particle filter provides an unbiased estimator
+of the likelihood, the estimated log-likelihood is biased due to
+Jensen’s inequality. This may also contribute to differences between the
+grid-based estimates and the EM-based approaches.
 
 ```{r}
 #| echo: False
@@ -1170,6 +1394,8 @@ transition_density <- function(x_next, x_prev, rho, tau) {
 }
 
 #Finding particle approximation of p(x_{0:n}|y_{0:n})
+
+#Basic SIR algorithm
 bootstrap_pf_model2_store <- function(y, sigma2, rho, tau, N) {
   Tlen <- length(y)
   particles <- matrix(0, nrow = N, ncol = Tlen)
@@ -1189,7 +1415,8 @@ bootstrap_pf_model2_store <- function(y, sigma2, rho, tau, N) {
   
   ## times 1,...,T
   for (n in 2:Tlen) {
-    ancestors[, n] <- sample(1:N, size = N, replace = TRUE, prob = weights[, n - 1])
+    ancestors[, n] <- sample(1:N, size = N, replace = TRUE, 
+                             prob = weights[, n - 1])
     particles[, n] <- rho * particles[ancestors[, n], n - 1] + tau * rnorm(N)
     
     logw <- dnorm(
@@ -1208,6 +1435,9 @@ bootstrap_pf_model2_store <- function(y, sigma2, rho, tau, N) {
   ))
 }
 
+#Computing the expectation statistic for the EM update
+#With SIR we reconstruct paths (like Q1 part 2)
+#-and use the final weights as the weights for the entire path
 sir_em_statistic <- function(pf, y) {
   particles <- pf$particles
   weights <- pf$weights
@@ -1233,6 +1463,7 @@ sir_em_statistic <- function(pf, y) {
   return(sum(weights[, Tlen] * vals))
 }
 
+#The FFBSm algorithm works similarly to Question 1
 ffbsm_em_statistic <- function(pf, y, rho, tau) {
   particles <- pf$particles
   weights <- pf$weights
@@ -1244,28 +1475,31 @@ ffbsm_em_statistic <- function(pf, y, rho, tau) {
   smooth_weights[, Tlen] <- weights[, Tlen]
   
   for (n in (Tlen - 1):1) {
-    for (i in 1:N) {
-      total <- 0
-      
-      for (j in 1:N) {
-        denom <- sum(weights[, n] *
-                       transition_density(particles[j, n + 1], particles[, n], rho, tau))
-        
-        if (denom > 0) {
-          total <- total +
-            smooth_weights[j, n + 1] *
-            transition_density(particles[j, n + 1], particles[i, n], rho, tau) /
-            denom
-        }
-      }
-      
-      smooth_weights[i, n] <- weights[i, n] * total
-    }
     
+    ## transition_matrix[i, j] = f(x_{n+1}^j | x_n^i)
+    transition_matrix <- outer(
+      particles[, n],
+      particles[, n + 1],
+      function(x_prev, x_next) {
+        dnorm(x_next, mean = rho * x_prev, sd = tau)
+      }
+    )
+    
+    ## denominator for each future particle j
+    denom <- as.vector(weights[, n] %*% transition_matrix)
+    
+    ## avoid division by zero
+    denom[denom == 0] <- .Machine$double.xmin
+    
+    ## backward smoothing update
+    backward_terms <- transition_matrix %*% (smooth_weights[, n + 1] / denom)
+    
+    smooth_weights[, n] <- weights[, n] * backward_terms
     smooth_weights[, n] <- smooth_weights[, n] / sum(smooth_weights[, n])
   }
   
   stat <- 0
+  
   for (n in 1:Tlen) {
     h <- (y[n] - particles[, n])^2 * exp(-particles[, n])
     stat <- stat + sum(smooth_weights[, n] * h)
@@ -1282,7 +1516,7 @@ n_iter <- 100
 sigma2_sir <- numeric(n_iter + 1)
 sigma2_ffbsm <- numeric(n_iter + 1)
 
-sigma2_sir[1] <- 0.5
+sigma2_sir[1] <- 0.5 #initial values for the algorithm
 sigma2_ffbsm[1] <- 0.5
 
 for (k in 1:n_iter) {
@@ -1300,7 +1534,7 @@ for (k in 1:n_iter) {
 ```{r}
 #| echo: false
 #| label: fig-q2-em
-#| fig-cap: "Particle EM estimates of sigma squared for Model 2 using SIR genealogies and FFBSm"
+#| fig-cap: "Particle EM estimates of sigma squared for Model 2 evolution over time"
 #| fig-width: 10
 #| fig-height: 4
 
@@ -1324,6 +1558,13 @@ legend(
   bty = "n"
 )
 
+```
+
+```{r}
+#| echo: false
+#| label: tbl-q2-em
+#| tbl-cap: "Particle EM estimates of sigma squared for Model 2"
+
 final_em_table <- data.frame(
   Method = c("SIR genealogies", "FFBSm"),
   `Final estimate of sigma squared` = round(c(tail(sigma2_sir, 1), tail(sigma2_ffbsm, 1)), 4),
@@ -1331,29 +1572,315 @@ final_em_table <- data.frame(
 )
 
 knitr::kable(final_em_table, format = "pipe")
+```
+
+# Question 3
+
+## 1. Proposed MCMC algorithm for parameter estimation
+
+Going forward, I use the priors suggested by the question, as they are
+simple and restrict parameters such as $\sigma^2$ and $\beta^2$ to be
+positive. A Particle Marginal Metropolis Hastings algorithm seems
+appropriate for the task, as it is good for batch estimation and can
+target the correct posterior distribution, with minimal tuning compared
+to usual MCMC. For my forward particle filter, I would use a simple,
+bootstrap proposal SIR algorithm (with multinomial resampling, as used
+in previous parts), while using a random walk proposal for each
+iteration of new parameters.
+
+## 2. Implementation of above approach
+
+To be more specific about the algorithm I implement, I first initialise
+$\theta = (\rho, \sigma^2, \beta^2)$ from the prior distributions and
+then transform it with different functions to have range in the real
+numbers. This is because using a random walk proposal could end up
+violating the prior constraints without transformations. For $\rho$, I use the transformation
+$z_{\rho} =$ atanh$(\rho)$, while for $\sigma^2$ and $\beta^2$ I used
+logarithmic transformations ($z_{\sigma}=$log$(\sigma^2), z_{\beta}=$log$(\beta^2)$).
+
+Then using the (untransformed) values of $\theta$ I use a bootstrap
+particle filter to estimate the (log) likelihood of the data.
+This again uses the recursion for the likelihood used in Question 2. The log prior density is equal to the sum of the log prior densities of the individual parameters, since the priors are assumed independent. Additionally, since the random walk proposal is performed on the transformed parameter scale, the Metropolis-Hastings acceptance ratio also includes a Jacobian correction term corresponding to the transformation back to the original parameter space. Together with the estimated log-likelihood, these quantities form the log acceptance ratio of the PMMH algorithm. Since the proposal distribution is symmetric, the proposal density terms cancel from the acceptance ratio. 
+
+The specific proposal used is a normal distribution with standard deviation equal to (0.01, 0.03, 0.03) for each component of $\theta$. After each value is proposed the denominator of the acceptance ratio is calculated using another bootstrap particle filter and if accepted, this density will be used again in the corresponding 
+
+These values were arrived upon by running the algorithm multiple times with different standard deviations (for 500 samples and 10,000 iterations) and stopping once the acceptance rate of the algorithm was higher than 5% and the traceplots seemed to explore the space well. 
+
+
+
+```{r}
+#| echo: false
+
+#####
+#QUESTION 3
+######
+
+#Simulating the Data
+data <- read.csv('data.csv', header=FALSE)
+y3 <- as.numeric(data$V1[1:1000])
+```
+
+```{r}
+#| echo: false
+
+T<- 1000
+
+#Inverse Gamma Prior function
+
+rig <- function(shape, scale) {
+  1 / rgamma(1, shape = shape, rate = scale)
+}
+
+#Also to make sure the proposals are on the same scale as the priors
+#I transform the priors to a different scale before new values are proposed
+#These two helper functions help me do that
+
+theta_to_z <- function(theta) {
+  c(atanh(theta[1]), log(theta[2]), log(theta[3]))
+}
+
+z_to_theta <- function(z) {
+  c(tanh(z[1]), exp(z[2]), exp(z[3]))
+}
+
+dig <- function(x, shape, scale, log = TRUE) {
+  out <- shape * log(scale) - lgamma(shape) -
+    (shape + 1) * log(x) - scale / x
+  
+  out[x <= 0] <- -Inf
+  
+  if (log) out else exp(out)
+}
+
+#The prior of theta is used in the acceptance ratio
+log_prior_theta <- function(theta) {
+  rho <- theta[1]
+  sigma2 <- theta[2]
+  beta2 <- theta[3]
+  
+  if (rho <= -1 || rho >= 1 || sigma2 <= 0 || beta2 <= 0) {
+    return(-Inf)
+  }
+  
+  ## rho ~ U(-1,1)
+  lp_rho <- -log(2)
+  lp_sigma <- dig(sigma2, shape = 1, scale = 1, log = TRUE)
+  lp_beta <- dig(beta2, shape = 1, scale = 1, log = TRUE)
+  
+  lp_rho + lp_sigma + lp_beta #by independence of the individual priors
+}
+
+#Different on a transformed scale
+
+log_jacobian <- function(theta) {
+  rho <- theta[1]
+  sigma2 <- theta[2]
+  beta2 <- theta[3]
+  
+  if (abs(rho) >= 1 || sigma2 <= 0 || beta2 <= 0) {
+    return(-Inf)
+  }
+  
+  log(1 - rho^2) + log(sigma2) + log(beta2) #determinant of jacobian matrix
+}
+
+## Posterior density on transformed scale
+log_prior_z <- function(z) {
+  theta <- z_to_theta(z)
+  log_prior_theta(theta) + log_jacobian(theta)
+}
+
+
+#We repeatedly estimate the likelihood using an SIR algorithm,
+#So I made it a function
+
+bootstrap_pf_loglik <- function(y, theta, Np = 500) {
+  rho <- theta[1]
+  sigma2 <- theta[2]
+  beta2 <- theta[3]
+  
+  if (rho <= -1 || rho >= 1 || sigma2 <= 0 || beta2 <= 0) {
+    return(-Inf)
+  }
+  
+  sigma <- sqrt(sigma2)
+  
+  ## Initial particles X_0 ~ N(0, 0.01)
+  x_particles <- rnorm(Np, mean = 0, sd = sqrt(0.01))
+  
+  loglik <- 0
+  
+  for (n in 1:1000) {
+    
+    ## Propagate: X_n | X_{n-1}
+    x_particles <- rnorm(Np, mean = rho * x_particles, sd = sigma)
+    
+    ## Observation density:
+    ## y_n | x_n ~ N(0, beta2 * exp(x_n))
+    obs_var <- beta2 * exp(x_particles)
+    log_w <- dnorm(y[n], mean = 0, sd = sqrt(obs_var), log = TRUE)
+    
+    ## Incremental likelihood estimate
+    loglik <- loglik + log(mean(exp(log_w)))
+    
+    ## Normalise weights
+    w <- exp(log_w)
+    w <- w / sum(w)
+    
+    ## Resample (Multinomial)
+    ancestors <- sample(seq_len(Np), size = Np, replace = TRUE, prob = w)
+    x_particles <- x_particles[ancestors]
+  }
+  
+  return(loglik)
+}
+
+
+pmmh <- function(y,iter, Np, proposal_sd = c(0.01, 0.03, 0.03)){
+  samples_theta <- matrix(NA, nrow = iter, ncol = 3)
+  colnames(samples_theta) <- c("rho", "sigma2", "beta2")
+  accept <- logical(iter) #to calculate acceptance rate of my algorithm
+  
+  init_theta <- c(
+    runif(1, -0.99, 0.99), #starting here to make sure there aren't issues with
+    #-arctan in the transformation
+    rig(1, 1),
+    rig(1, 1)
+  )
+  
+  z_curr <- theta_to_z(init_theta) #for proposal
+  theta_curr <- init_theta
+  
+  #These feature in the denominator of the acceptance ratio
+  loglik_curr <- bootstrap_pf_loglik(y, init_theta, Np=Np)
+  logpost_curr <- loglik_curr + log_prior_z(z_curr)
+  
+  loglik_store <- numeric(iter)
+  loglik_store[1] <- loglik_curr
+  samples_theta[1, ] <- init_theta
+  
+  
+  for (k in 2:iter){
+    ## Propose on transformed scale
+    z_prop <- z_curr + rnorm(3, mean = 0, sd = proposal_sd)
+    theta_prop <- z_to_theta(z_prop)
+    
+    ## Particle likelihood estimate
+    loglik_prop <- bootstrap_pf_loglik(y, theta_prop, Np = Np)
+    logpost_prop <- loglik_prop + log_prior_z(z_prop)
+    
+    ## Symmetric random walk on z scale, so proposal ratio cancels
+    log_alpha <- logpost_prop - logpost_curr #(acceptance ratio)
+    
+    if (log(runif(1)) < log_alpha) {
+      z_curr <- z_prop
+      theta_curr <- theta_prop
+      loglik_curr <- loglik_prop
+      logpost_curr <- logpost_prop
+      accept[k] <- TRUE
+    }
+    
+    samples_theta[k, ] <- theta_curr
+    loglik_store[k] <- loglik_curr
+  }
+  list(
+    samples = as.data.frame(samples_theta),
+    acceptance_rate = mean(accept[-1])
+  )
+}
+
 
 
 ```
 
+```{r}
+#| echo: False
+
+## ------------------------------------------------------------
+## Running the PMMH algorithm
+## ------------------------------------------------------------
+
+pmmh_out <- pmmh(
+  y = y3,
+  iter = 10000,
+  Np = 500
+)
+
+pmmh_out$acceptance_rate
+
+
+```
+
+```{r}
+## ------------------------------------------------------------
+## Burn-in
+## ------------------------------------------------------------
+
+burn <- floor(0.25 * nrow(pmmh_out$samples))
+post <- pmmh_out$samples[(burn + 1):nrow(pmmh_out$samples), ]
+
+## ------------------------------------------------------------
+## Marginal posterior density plots
+## ------------------------------------------------------------
+
+par(mfrow = c(1, 3))
+
+plot(density(post$rho),
+     main = expression("Posterior density of " * rho),
+     xlab = expression(rho),
+     lwd = 2)
+
+plot(density(post$sigma2),
+     main = expression("Posterior density of " * sigma^2),
+     xlab = expression(sigma^2),
+     lwd = 2)
+
+plot(density(post$beta2),
+     main = expression("Posterior density of " * beta^2),
+     xlab = expression(beta^2),
+     lwd = 2)
+
+par(mfrow = c(1, 1))
+
+```
+
+```{r}
+#| echo: false
+## ------------------------------------------------------------
+## Trace plots
+## ------------------------------------------------------------
+
+par(mfrow = c(3, 1), mar = c(4, 4, 2, 1))
+
+plot(pmmh_out$samples$rho,
+     type = "l",
+     main = expression("Trace plot for " * rho),
+     xlab = "Iteration",
+     ylab = expression(rho))
+
+abline(v = burn, lty = 2)
+
+plot(pmmh_out$samples$sigma2,
+     type = "l",
+     main = expression("Trace plot for " * sigma^2),
+     xlab = "Iteration",
+     ylab = expression(sigma^2))
+
+abline(v = burn, lty = 2)
+
+plot(pmmh_out$samples$beta2,
+     type = "l",
+     main = expression("Trace plot for " * beta^2),
+     xlab = "Iteration",
+     ylab = expression(beta^2))
+
+abline(v = burn, lty = 2)
+
+par(mfrow = c(1, 1))
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+```
 
 # Code Appendix {#sec-code-appendix}
 
@@ -1363,14 +1890,3 @@ knitr::kable(final_em_table, format = "pipe")
 #| code-fold: true
 
 ```
-
-
-
-
-
-
-
-
-
-
-
