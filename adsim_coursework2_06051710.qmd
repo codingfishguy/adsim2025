@@ -41,7 +41,6 @@ include_solutions <- TRUE
 set.seed(8)
 require(rmarkdown)
 require(knitr)
-require(kableExtra)
 # Put any library imports and other preamble here.
 ```
 
@@ -85,11 +84,10 @@ $Y_n = c_n +C_nX_n + W_n$ (where $W_n \sim N(0,1)$), both by a classic
 Taylor expansion. This leads to $B_n = \sqrt{0.1}$,
 $C_n = \frac{\psi_{\theta}(X_{n-1},0)}{10}$ and $D_n=1$ (all other
 variables are not relevant for the proposal). The approximation of the
-optimal proposal[^1] then takes the form
+optimal proposal then takes the form
 $q(x_n|y_n, x_{n-1}) \propto N(m_n(x_{n-1}, y_n), S_n(x_{n-1}))$, where
 $m_n$ and $S_n$ are defined in @eq-1.
 
-[^1]: this result is taken from the notes
 
 $$
 \begin{aligned}
@@ -99,7 +97,7 @@ m_n(x_{n-1}, y_n) &= S_n(x_{n-1})\Big((B_n B_n^T)^{-1}\psi_{\theta}(x_{n-1},0) \
 &\quad + C_n^T (D_n D_n^T)^{-1} \big(y_n - \phi_{\theta}(\psi_{\theta}(x_{n-1},0),0) + C_n \psi_{\theta}(x_{n-1},0)\big)\Big) \\
 m_n(x_{n-1}, y_n) &= S_n(x_{n-1}) \left(10\psi_{\theta}(x_{n-1},0)+ \frac{\psi_{\theta}(x_{n-1},0)}{10}\left(y_n + \frac{\psi_{\theta}(x_{n-1},0)^2}{20}\right)\right)
 \end{aligned}
-$$ {#eq-1}
+$${#eq-1}
 
 For $q_{\theta}(x_0|y_0)$ the linearisation just leads to the bootstrap
 proposal, as linearising the likelihood of $y_0$ around the prior mean
@@ -392,10 +390,8 @@ The SIR filter has clear path degeneracy (for N=50). This is not clear
 if the paths of all particles are plotted due to the scale of the data,
 however, it is clearly demonstrated in @fig-4 where paths from n=190
 onwards are plotted and compared to the paths from n=0 to 20. In fact,
-there is only a single path when going back from n=154[^2], suggesting
+there is only a single path when going back from n=154[code for this is in the appendix], suggesting
 path degeneracy is a strong issue for the SIR filter.
-
-[^2]: code for this is in the appendix
 
 ```{r}
 #| echo: False
@@ -430,7 +426,7 @@ path_generator <- function(anc, samples){
 paths50 <- path_generator(SIR50$ancestors, SIR50$samples)
 par(mfrow=c(1,2))
 
-matplot(t(paths50[,0:20]), type = "l", lty = 1, col = rgb(0, 0, 0, 0.1),
+matplot(t(paths50[,1:20]), type = "l", lty = 1, col = rgb(0, 0, 0, 0.1),
         xlab = "Time", ylab = "Value")
 matplot(190:200, t(paths50[,190:200]), type = "l", lty = 1,
         col = rgb(0, 0, 0, 0.1),
@@ -666,7 +662,7 @@ From the notes, the approximation of the smoothed additive functional
 for both parts a and b will be:
 
 $$
-\hat{S}_n^{\theta} = \int \left[ \sum_{k=0}^{n} x_k \right] \hat{p}_{\theta}(dx_{0:n} \mid y_{0:n})
+\hat{S}_n^{\theta} = \int \left[ \sum_{k=0}^{n} x_k \right] \hat{p}_{\theta}(dx_{0:n}| y_{0:n})
 $$
 
 Where $\hat{p}_{\theta}(dx_{0:n}|y_{0:n})$ is approximated with the SIR
@@ -800,11 +796,7 @@ variance_results <- data.frame(
 kable(
   variance_results,
   digits = 3
-) %>%
-  kable_styling(
-    full_width = FALSE,
-    bootstrap_options = c("striped", "hover", "condensed")
-  )
+) 
 ```
 
 ```{r}
@@ -1246,7 +1238,6 @@ plot_sim_envelope <- function(y_obs, sims, main = "") {
 par(mfrow = c(1, 2))
 plot_sim_envelope(y1, sim_y1_m1, "y1 fitted with Model 1")
 plot_sim_envelope(y1, sim_y1_m2, "y1 fitted with Model 2")
-par(mfrow = c(1, 1))
 
 ```
 
@@ -1260,7 +1251,6 @@ par(mfrow = c(1, 1))
 par(mfrow = c(1, 2))
 plot_sim_envelope(y2, sim_y2_m1, "y2 fitted with Model 1")
 plot_sim_envelope(y2, sim_y2_m2, "y2 fitted with Model 2")
-par(mfrow = c(1, 1))
 
 
 ```
@@ -1294,13 +1284,13 @@ Q(\theta_k,\theta)
 =
 \int
 \log p_\theta(x_{0:T},y_{0:T})
-\, p_{\theta_k}(x_{0:T}\mid y_{0:T})
+\, p_{\theta_k}(x_{0:T}| y_{0:T})
 \, dx_{0:T}
 $$
 
 with respect to $\theta$ at iteration k.
 
-For Model 2, $g_{\sigma^2}(y_n\mid x_n)\sim N(x_n,\sigma^2 e^{x_n})$ so
+For Model 2, $g_{\sigma^2}(y_n| x_n)\sim N(x_n,\sigma^2 e^{x_n})$ so
 the complete-data log-likelihood can be written as
 
 $$
@@ -1309,7 +1299,7 @@ $$
 C
 +
 \sum_{n=0}^T
-\log g_{\sigma^2}(y_n\mid x_n),
+\log g_{\sigma^2}(y_n|x_n),
 $$
 
 where $C$ is a term that does not depend on $\sigma^2$. Hence,
@@ -1339,7 +1329,7 @@ C
 \left[
 \sum_{n=0}^T
 (y_n-x_n)^2 e^{-x_n}
-\mid y_{0:T}
+| y_{0:T}
 \right].
 $$
 
@@ -1354,12 +1344,12 @@ $$
 \left[
 \sum_{n=0}^T
 (y_n-x_n)^2 e^{-x_n}
-\mid y_{0:T}
+| y_{0:T}
 \right].
 $$
 
 The expectation above requires the smoothing distribution
-$p_{\sigma_k^2}(x_{0:T}\mid y_{0:T})$ which is approximated using
+$p_{\sigma_k^2}(x_{0:T}| y_{0:T})$ which is approximated using
 particle filtering and smoothing methods. The SIR algorithm uses a
 standard bootstrap proposal and the FFBSm algorithm is similar to the
 one used in Question 1. The entire expectation/integral is approximated
@@ -1602,10 +1592,9 @@ Then using the (untransformed) values of $\theta$ I use a bootstrap
 particle filter to estimate the (log) likelihood of the data.
 This again uses the recursion for the likelihood used in Question 2. The log prior density is equal to the sum of the log prior densities of the individual parameters, since the priors are assumed independent. Additionally, since the random walk proposal is performed on the transformed parameter scale, the Metropolis-Hastings acceptance ratio also includes a Jacobian correction term corresponding to the transformation back to the original parameter space. Together with the estimated log-likelihood, these quantities form the log acceptance ratio of the PMMH algorithm. Since the proposal distribution is symmetric, the proposal density terms cancel from the acceptance ratio. 
 
-The specific proposal used is a normal distribution with standard deviation equal to (0.01, 0.03, 0.03) for each component of $\theta$. After each value is proposed the denominator of the acceptance ratio is calculated using another bootstrap particle filter and if accepted, this density will be used again in the corresponding 
+The specific proposal used is a normal distribution with standard deviation equal to (0.01, 0.03, 0.03) for each component of $\theta$. After each value is proposed the numerator of the acceptance ratio is calculated using another bootstrap particle filter and if accepted, this density will be used again in the following iteration. The values for the proposal standard deviation were arrived upon by running the algorithm multiple times with different standard deviations (for 500 samples and 10,000 iterations) and stopping once the acceptance rate of the algorithm was higher than 5% and the traceplots seemed to explore the space well. 
 
-These values were arrived upon by running the algorithm multiple times with different standard deviations (for 500 samples and 10,000 iterations) and stopping once the acceptance rate of the algorithm was higher than 5% and the traceplots seemed to explore the space well. 
-
+This then led to the marginal densities in @fig-q3-margdens as well as the traceplots in @fig-q3-trace (I discarded 25% of samples as burn-in after seeing the traceplots). The traceplots were my first diagnostic and suggest convergence was reached for all parameters, though there did not seem to be much exploration of the parameter space for $\rho$ and $\sigma^2$, ($\beta^2$ seemed to be a bit better). My second diagnostic was the ESS where @tbl-q3-2 confirms the poor mixing of the MCMC algorithm. Though this could be remedied by including more particles, the code already takes a significant amount of time to run (>8 minutes), so I opted not to do this.
 
 
 ```{r}
@@ -1736,7 +1725,8 @@ bootstrap_pf_loglik <- function(y, theta, Np = 500) {
 }
 
 
-pmmh <- function(y,iter, Np, proposal_sd = c(0.01, 0.03, 0.03)){
+pmmh <- function(y,iter, Np, proposal_sd = c(0.01, 0.03, 0.05)){
+  set.seed(17)
   samples_theta <- matrix(NA, nrow = iter, ncol = 3)
   colnames(samples_theta) <- c("rho", "sigma2", "beta2")
   accept <- logical(iter) #to calculate acceptance rate of my algorithm
@@ -1795,16 +1785,25 @@ pmmh <- function(y,iter, Np, proposal_sd = c(0.01, 0.03, 0.03)){
 
 ```{r}
 #| echo: False
+#| output: false
 
 ## ------------------------------------------------------------
 ## Running the PMMH algorithm
 ## ------------------------------------------------------------
 
-pmmh_out <- pmmh(
-  y = y3,
-  iter = 10000,
-  Np = 500
-)
+#| echo: false
+
+if (!file.exists("pmmh_out.rds")) { 
+  #so i don't need to rerun this algorithm when rendering multiple times
+  pmmh_out <- pmmh(
+    y = y3,
+    iter = 10000,
+    Np = 500
+  )
+  saveRDS(pmmh_out, "pmmh_out.rds")
+} else {
+  pmmh_out <- readRDS("pmmh_out.rds")
+} 
 
 pmmh_out$acceptance_rate
 
@@ -1812,9 +1811,15 @@ pmmh_out$acceptance_rate
 ```
 
 ```{r}
+#| echo: false
+#| label: fig-q3-margdens
+#| fig-cap: "Marginal Posterior Density of all Parameters"
+#| fig-width: 12
+#| fig-height: 4
+
+
 ## ------------------------------------------------------------
 ## Burn-in
-## ------------------------------------------------------------
 
 burn <- floor(0.25 * nrow(pmmh_out$samples))
 post <- pmmh_out$samples[(burn + 1):nrow(pmmh_out$samples), ]
@@ -1840,12 +1845,1595 @@ plot(density(post$beta2),
      xlab = expression(beta^2),
      lwd = 2)
 
-par(mfrow = c(1, 1))
+```
+
+```{r}
+#| echo: false
+#| label: fig-q3-trace
+#| fig-cap: "Traceplots for all parameters"
+#| fig-width: 12
+#| fig-height: 4
+
+
+## ------------------------------------------------------------
+## Trace plots
+## ------------------------------------------------------------
+
+par(mfrow = c(3, 1), mar = c(4, 4, 2, 1))
+
+plot(pmmh_out$samples$rho,
+     type = "l",
+     main = expression("Trace plot for " * rho),
+     xlab = "Iteration",
+     ylab = expression(rho))
+
+abline(v = burn, lty = 2)
+
+plot(pmmh_out$samples$sigma2,
+     type = "l",
+     main = expression("Trace plot for " * sigma^2),
+     xlab = "Iteration",
+     ylab = expression(sigma^2))
+
+abline(v = burn, lty = 2)
+
+plot(pmmh_out$samples$beta2,
+     type = "l",
+     main = expression("Trace plot for " * beta^2),
+     xlab = "Iteration",
+     ylab = expression(beta^2))
+
+abline(v = burn, lty = 2)
+```
+
+```{r}
+#| echo: false
+#| label: tbl-q3-2
+#| tbl-cap: "Effective Sample Size for Parameter Estimates"
+
+
+library(coda)
+
+ess_table <- data.frame(
+  Parameter = c("rho", "sigma2", "beta2"),
+  ESS = c(
+    effectiveSize(post$rho),
+    effectiveSize(post$sigma2),
+    effectiveSize(post$beta2)
+  )
+)
+
+knitr::kable(ess_table, digits = 2)
+```
+
+
+## 3. Prediction using the posterior distribution
+
+The predictive posterior can be written as 
+
+$$
+p(y_{T+1:T'} \mid y_{1:T})
+=
+\int
+p(y_{T+1:T'} \mid x_T,\theta)
+\,p(x_T,\theta \mid y_{1:T})
+\,dx_T\,d\theta.
+$$
+
+This integral is analytically intractable, since both the posterior distribution of the static parameters and the filtering distribution of the latent state are unavailable in closed form. However, the PMMH algorithm provides samples from the posterior distribution of $\theta$, while the particle filter provides a particle approximation of the filtering distribution $p(x_T \mid y_{1:T},\theta).$ The integral can therefore be approximated using Monte Carlo simulation. 
+
+For each retained posterior sample $\theta^{(m)}$, I can run a standard bootstrap particle filter using the observed data $y_{1:T}$ as before. This produces a weighted particle approximation of $p(x_T \mid y_{1:T},\theta^{(m)}).$ I then sample $X_T^{(m)}\sim (x_T \mid y_{1:T},\theta^{(m)})$ from the final weighted particle system. The pair $(X_T^{(m)},\theta^{(m)})$ therefore approximates a draw from the joint posterior distribution $p(x_T,\theta \mid y_{1:T})$. 
+
+Conditional on $(X_T^{(m)},\theta^{(m)})$, future latent states are simulated recursively using the state equation
+
+$$
+X_n^{(m)}
+=
+\rho^{(m)}X_{n-1}^{(m)}
++
+\sigma^{(m)}V_n^{(m)},
+\qquad
+V_n^{(m)} \sim N(0,1),
+$$
+
+for $n=T+1,\dots,T'$.
+
+Then future observations are simulated using the observation equation
+
+$$
+Y_n^{(m)}
+=
+\beta^{(m)}
+\exp\left(\frac{X_n^{(m)}}{2}\right)
+W_n^{(m)},
+\qquad
+W_n^{(m)} \sim N(0,1).
+$$
+
+Repeating this procedure M times for all retained posterior samples produces simulated trajectories $\left\{Y_{T+1:T'}^{(m)}\right\}_{m=1}^M$ which form a Monte Carlo approximation of the predictive posterior distribution. More precisely, the predictive distribution is represented by the empirical measure
+
+$$
+\widehat p_M(dy)
+=
+\frac{1}{M}
+\sum_{m=1}^M
+\delta_{Y_{T+1:T'}^{(m)}}(dy),
+$$
+
+where $\delta_x$ denotes a Dirac point mass at $x$. 
+
+
+## 4. Credible Intervals
+
+The posterior predictive distribution was approximated using the retained PMMH samples as outlined earlier. For each posterior draw of $\theta$, I ran a bootstrap particle filter (once again, with multinomial resampling) on $y_{1:T}$ and sampled $X_T$ from the final weighted particle system. Conditional on this sampled pair $(X_T,\theta)$, I simulated the latent process and observations forward until $T'$. Repeating this produced samples from the posterior predictive distribution.
+
+@fig-q3-predictive-ci shows the posterior predictive mean together with pointwise 99% credible intervals and the true future observations. The intervals are wide, which is expected for this stochastic volatility model, since future volatility is itself uncertain. In fact, it is so wide that it looks as though the true values of y are not even fluctuating at all! One positive from this figure is that the predictive mean appears to remain close to zero (which the true values also remain near), likely because the observation equation itself is centred at 0. 
+
+
+```{r}
+#| echo: false
+
+#####
+# Question 3 Part 4: Posterior predictive credible intervals
+#####
+
+set.seed(20)
+
+## Full data-set
+data_full <- read.csv("data.csv", header = FALSE)
+y_all <- as.numeric(data_full$V1)
+
+## Training data used in PMMH
+T_train <- 1000
+y_train <- y_all[1:T_train]
+
+## Future observations to compare against
+y_future_true <- y_all[(T_train + 1):length(y_all)]
+H <- length(y_future_true)
+
+## Number of posterior predictive trajectories
+M_pred <- min(1000, nrow(post))
+
+## Thin/sample posterior draws to reduce computation
+post_idx <- sample(seq_len(nrow(post)), size = M_pred, replace = FALSE)
+post_pred <- post[post_idx, ]
 
 ```
 
 ```{r}
 #| echo: false
+
+## Particle filter that returns final particles and weights,
+## rather than only the likelihood estimate like previously
+
+bootstrap_pf_final_particles <- function(y, theta, Np = 500) {
+  rho <- theta[1]
+  sigma2 <- theta[2]
+  beta2 <- theta[3]
+
+  ## Initial particles X_0 ~ N(0, 0.01)
+  x_particles <- rnorm(Np, mean = 0, sd = sqrt(0.01))
+  
+  for (n in seq_along(y)) {
+    
+    ## Propagate X_n | X_{n-1}
+    x_particles <- rnorm(
+      Np,
+      mean = rho * x_particles,
+      sd = sqrt(sigma2)
+    )
+    
+    ## Observation density y_n | x_n
+    obs_sd <- sqrt(beta2 * exp(x_particles))
+    
+    log_w <- dnorm(
+      y[n],
+      mean = 0,
+      sd = obs_sd,
+      log = TRUE
+    )
+    
+    ## Normalise weights stably
+    log_w <- log_w - max(log_w)
+    w <- exp(log_w)
+    w <- w / sum(w)
+    
+    ## Resample unless this is the final time
+    if (n < length(y)) {
+      ancestors <- sample(seq_len(Np), size = Np, replace = TRUE, prob = w)
+      x_particles <- x_particles[ancestors]
+    }
+  }
+  
+  return(list(
+    particles = x_particles,
+    weights = w
+  ))
+}
+
+
+```
+
+```{r}
+#| echo: false
+
+simulate_predictive_trajectory <- function(theta, y_train, H, Np = 500) {
+  rho <- theta[1]
+  sigma2 <- theta[2]
+  beta2 <- theta[3]
+  
+  ## Approximate p(x_T | y_1:T, theta)
+  pf <- bootstrap_pf_final_particles(y_train, theta, Np = Np)
+  
+  ## Sample X_T from the final weighted particle system
+  x_curr <- sample(
+    pf$particles,
+    size = 1,
+    replace = TRUE,
+    prob = pf$weights
+  )
+  
+  y_future <- numeric(H)
+  
+  for (h in 1:H) {
+    
+    ## Simulate X_{T+h}
+    x_curr <- rnorm(
+      1,
+      mean = rho * x_curr,
+      sd = sqrt(sigma2)
+    )
+    
+    ## Simulate Y_{T+h}
+    y_future[h] <- rnorm(
+      1,
+      mean = 0,
+      sd = sqrt(beta2 * exp(x_curr))
+    )
+  }
+  
+  return(y_future)
+}
+
+```
+
+```{r}
+#| echo: false
+#| output: false
+
+## Generate posterior predictive trajectories
+## Rows are posterior predictive draws, columns are future times.
+
+if (!file.exists("q3_predictive_draws.rds")) {
+  
+  y_pred_draws <- matrix(NA, nrow = M_pred, ncol = H)
+  
+  for (m in 1:M_pred) {
+    theta_m <- c(
+      post_pred$rho[m],
+      post_pred$sigma2[m],
+      post_pred$beta2[m]
+    )
+    
+    y_pred_draws[m, ] <- simulate_predictive_trajectory(
+      theta = theta_m,
+      y_train = y_train,
+      H = H,
+      Np = 500
+    )
+  }
+  
+  saveRDS(y_pred_draws, "q3_predictive_draws.rds")
+  
+} else {
+  
+  y_pred_draws <- readRDS("q3_predictive_draws.rds")
+  
+}
+
+
+```
+
+```{r}
+#| echo: false
+
+## Pointwise posterior predictive summaries
+
+pred_mean <- colMeans(y_pred_draws)
+
+pred_lower_99 <- apply(y_pred_draws, 2, quantile, probs = 0.005)
+pred_upper_99 <- apply(y_pred_draws, 2, quantile, probs = 0.995)
+
+future_times <- (T_train + 1):length(y_all)
+
+```
+
+```{r}
+#| echo: false
+#| label: fig-q3-predictive-ci
+#| fig-cap: "99% posterior predictive credible intervals for future observations"
+#| fig-width: 12
+#| fig-height: 5
+
+plot(
+  future_times,
+  y_future_true,
+  type = "l",
+  lwd = 1,
+  col = "black",
+  ylim = range(c(y_future_true, pred_lower_99, pred_upper_99, pred_mean)),
+  xlab = "Time n",
+  ylab = expression(Y[n]),
+  main = "Posterior predictive distribution"
+)
+
+lines(future_times, pred_mean, col = adjustcolor("red", alpha.f = 0.3), lwd = 2)
+
+lines(future_times, pred_lower_99, col = "darkgreen", lwd = 2, lty = 2)
+lines(future_times, pred_upper_99, col = "darkgreen", lwd = 2, lty = 2)
+
+legend(
+  "topright",
+  legend = c("True future data", "Posterior predictive mean", "99% credible interval"),
+  col = c("black", "red", "darkgreen"),
+  lty = c(1, 1, 2),
+  lwd = c(1, 2, 2),
+  bty = "n"
+)
+
+
+```
+
+## 5. Appropriateness of the model
+
+Overall, the stochastic volatility model proposed does not seem fully adequate to describe daily log returns. One positive feature of the model is that it correctly assumes the returns are centred around zero. Since $\mathbb E[Y_n \mid X_n,\theta] = 0.$ This is consistent with the empirical behaviour of daily log returns, which are very small and fluctuate around zero. This also explains why the posterior predictive mean is close to the future observations: it is essentially estimating the centre of the return distribution rather than predicting the exact future movements. Additionally, perhaps the model would be better at detecting fluctuations if the estimation of the parameters was done better in part 2; this could entail increasing the number of iterations or particles mainly, along with perhaps MCMC specific techniques to help the parameters better explore the space (such as using multiple chains to detect multimodality). All of these approaches would greatly increase computational cost however, which is why they were not implemented.
+
+A major limitation if the fitted model is that the posterior predictive credible intervals are far too wide to be practically useful. Although the true future observations may lie inside the 99% credible bands, this is not strong evidence of good predictive performance if the intervals cover an extremely large range of possible values. In this case, the model appears to achieve coverage mainly by being overly conservative, rather than by accurately learning the future scale of the returns. Since the observed log returns are very small and concentrated close to zero, excessively wide intervals suggest that the model overestimates predictive uncertainty. This makes the model weak for forecasting purposes: it may correctly indicate that returns are centred around zero, but it gives too little precise information about the likely magnitude of future movements. Therefore, despite being a reasonable baseline stochastic volatility model, the fitted model should not be considered fully appropriate for this dataset in its current form.
+
+There are also likely ways to improve the model dynamics; for example, the observation noise is conditionally Gaussian, which does not fit the stylised fact observed in financial returns of data exhibiting heavier tails or extreme returns. A Student-t observation error, for example, could be more robust. Overall, I would say the model is not useful for any real purpose in the way I have used it in this question, though perhaps with better estimation of parameters, or even altering certain model dynamics, it could have greater predictive capacity.
+
+# Code Appendix
+
+```{r}
+#| echo: true
+#| eval: false
+######
+#Question 1a
+######
+
+#Simulating the dataset
+x <- rep(0,201)
+y <- rep(0,201)
+x[1] <- rnorm(1)
+y[1] <- (x[1]^2)/20 + rnorm(1)
+
+for (i in 2:201){
+  x[i] <- 0.5*x[i-1] + (25*x[i-1])/(1+(x[i-1])^2) +
+    8*cos(1.2*(i-1))+rnorm(1, mean=0, sd=sqrt(0.1))
+  y[i] <- (x[i]^2)/20 + rnorm(1)
+}
+
+#A single forward run of a SIR particle filter
+
+#creates a matrix with N rows and n columns 
+#each column will have the Xi sampled at time i 
+#weights will all be assumed to be 1/N, as the samples will be in-
+#-the matrix only after resampling
+
+psi0 <- function(x, n){
+  return (0.5*x + (25*x)/(1+x^2) + 8*cos(1.2*n))
+}
+
+proposal <- function(x, y, n){
+  psi <- psi0(x, n)
+  Sn <- (10 + (psi^2)/100)^(-1)
+  mn <- Sn * (10*psi + (psi/10) * (y + (psi^2)/20 ))
+  return(list(mn = mn, Sn = Sn))
+}
+
+SIR <- function(N, n){
+  samples <- matrix(0, nrow=N, ncol=n+1)
+  unweighted <- matrix(0, nrow=N, ncol=n+1)
+  sample_weights <- matrix(0, nrow=N, ncol=n+1)
+  ancestors <- matrix(0, nrow=N, ncol=n+1)
+  
+  ## Sampling first samples
+  
+  samples0 <- rep(0,N)
+  weights0 <- rep(0,N)
+  
+  for (i in 1:N){
+    samples0[i] <- rnorm(1, mean=0, sd=1)
+    #compute unnormalised weights- target over proposal
+    #in bootstrap case this is just g
+    weights0[i] <- dnorm(y[1], mean=(samples0[i]^2)/20, sd=1)
+  }
+  
+  # normalise weights
+  weights0 <- weights0/sum(weights0)
+  unweighted[,1] <- samples0
+  sample_weights[,1]<-weights0
+  
+  #Resample (Multinomial Resampling)
+
+  resamples <- sample(1:N, size = N, replace = TRUE, prob = weights0)
+  ancestors[,1] <- resamples
+  resamples0 <- rep(0,N)
+  
+  
+  for (i in 1:N){
+    resamples0[i] <- samples0[resamples[i]]
+  }
+  
+  #update matrix
+  samples[,1] <- resamples0
+  
+  ## Sampling remaining 199*N samples
+  for (k in 2:(n+1)){
+    samplesk <- rep(0,N)
+    weightsk <- rep(0,N)
+    
+    
+    for (i in 1:N){
+      Xkprev <- samples[,k-1][i]
+      prop <- proposal(x=Xkprev, y=y[k], n=k-1)
+      samplesk[i] <- rnorm(1, mean=prop$mn, sd=sqrt(prop$Sn))
+      
+      fx <- psi0(Xkprev, k-1)
+      transition <- dnorm(samplesk[i], mean=fx, sd=sqrt(0.1))
+      likelihood <- dnorm(y[k], mean=(samplesk[i]^2)/20, sd=1)
+      proposal_density <- dnorm(samplesk[i], mean=prop$mn, sd=sqrt(prop$Sn))
+      
+      
+      
+      
+      log_w <- log(transition) + log(likelihood) - log(proposal_density)
+      weightsk[i] <- exp(log_w)
+    }
+    #normalise weights
+    weightsk <- weightsk/sum(weightsk)
+    unweighted[,k] <- samplesk
+    sample_weights[,k] <- weightsk
+    
+    #Multinomial Resampling
+    resamples <- sample(1:N, size=N, replace=TRUE, prob=weightsk)
+    ancestors[,k] <- resamples
+    resamplesk <- rep(0,N)
+    
+    for (i in 1:N){
+      resamplesk[i] <- samplesk[resamples[i]]
+    }
+    
+    #update matrix
+    samples[,k] <- resamplesk
+  }
+  return(list(samples = samples, ancestors = ancestors, 
+              unweighted=unweighted, sample_weights=sample_weights))
+}
+
+SIR50 <- SIR(50, n=200)
+sir50 <- SIR50$samples
+unweighted_sir50 <- SIR50$unweighted
+weights_sir50 <- SIR50$sample_weights
+SIR500 <- SIR(500, n=200)
+
+#system.time({
+#  SIR500 <- SIR(500)
+#})- found the time is 0.649
+
+sir500 <- SIR500$samples
+unweighted_sir500 <- SIR500$unweighted
+weights_sir500 <- SIR500$sample_weights
+
+#PLOTS
+
+times = c(2,51,101,151,200)
+par(mfrow = c(1, length(times)))
+
+for (n in times) {
+  d <- density(sir50[, n])
+  plot(d, lwd = 2, col = "blue",
+       main = paste("n =", n-1),
+       xlab = "x", ylab = "Density")
+  abline(v = x[n], col = "red", lwd = 2, lty = 2)
+}
+
+
+times = c(2,51,101,151,200)
+par(mfrow = c(1, length(times)))
+
+for (n in times) {
+  d <- density(sir500[, n])
+  plot(d, lwd = 2, col = "blue",
+       main = paste("n =", n-1),
+       xlab = "x", ylab = "Density")
+  abline(v = x[n], col = "red", lwd = 2, lty = 2)
+}
+```
+
+
+```{r}
+#| echo: true
+#| eval: false
+
+######
+#Question 1b
+######
+
+ffbsm <- function(samples, weights){
+  N <- nrow(samples)
+  T <- ncol(samples)
+  
+  back_weights <- matrix(0, nrow=N, ncol=T)
+  back_weights[,T] <- weights[,T]
+  
+  for (k in (T-1):1){
+    
+    x_prev <- samples[,k]
+    x_next <- samples[,k+1]
+    
+    # Transition matrix: [i, j] = f(x_next[j] | x_prev[i])
+    trans_mat <- outer(
+      x_prev, x_next,
+      Vectorize(function(xp, xn) {
+        dnorm(xn, mean = psi0(xp, k), sd = sqrt(0.1))
+      })
+    )
+    
+    # denom_j = sum_l weights[l,k] * f(x_next[j] | x_prev[l])
+    denom <- as.vector(weights[,k] %*% trans_mat)
+    
+    # Avoid division by zero
+    denom[denom == 0] <- 1e-12
+    
+    # Compute sum over j efficiently
+    # back_weights[j,k+1] / denom[j]
+    ratio <- back_weights[,k+1] / denom
+    
+    # sum_j ratio[j] * f(x_next[j] | x_prev[i])
+    back_weights[,k] <- weights[,k] * (trans_mat %*% ratio)
+    
+    # normalise
+    back_weights[,k] <- back_weights[,k] / sum(back_weights[,k])
+  }
+  
+  return(back_weights)
+}
+
+system.time({
+  ffbsm_weights1 <- ffbsm(unweighted_sir50, weights_sir50)
+})
+
+system.time({
+  ffbsm_weights2 <- ffbsm(unweighted_sir500, weights_sir500)
+})
+
+#PLOTS
+
+times = c(2,51,101,151,200)
+par(mfrow = c(1, length(times)))
+
+for (n in times) {
+  d <- density(unweighted_sir50[,n],
+               weights = ffbsm_weights1[,n])
+  plot(d, lwd = 2, col = "blue",
+       main = paste("n =", n-1),
+       xlab = "x", ylab = "Density")
+  abline(v = x[n], col = "red", lwd = 2, lty = 2)
+}
+
+times = c(2,51,101,151,200)
+par(mfrow = c(1, length(times)))
+
+for (n in times) {
+  d <- density(unweighted_sir500[,n],
+               weights = ffbsm_weights2[,n])
+  plot(d, lwd = 2, col = "blue",
+       main = paste("n =", n-1),
+       xlab = "x", ylab = "Density")
+  abline(v = x[n], col = "red", lwd = 2, lty = 2)
+}
+```
+
+```{r}
+#| echo: true
+#| eval: false
+
+######
+#Question 2a
+######
+
+path_generator <- function(anc, samples){
+  T <- ncol(samples)
+  paths <- matrix(0, nrow=length(samples[,1]), ncol=T)
+  paths[,T] <- samples[,T]
+  indices <- 1:length(samples[,1])
+  idx <- T
+  while (idx > 1) {
+    indices <- anc[indices, idx]
+    paths[, idx-1] <- samples[indices, idx-1]
+    idx <- idx - 1
+  }
+  return(paths)
+}
+
+#PLOTS
+
+paths50 <- path_generator(SIR50$ancestors, SIR50$samples)
+par(mfrow=c(1,2))
+
+matplot(t(paths50[,1:20]), type = "l", lty = 1, col = rgb(0, 0, 0, 0.1),
+        xlab = "Time", ylab = "Value")
+matplot(190:200, t(paths50[,190:200]), type = "l", lty = 1,
+        col = rgb(0, 0, 0, 0.1),
+        xlab = "Time", ylab = "Value")
+        
+#Used this to see unique particles at first
+length(unique(paths50[,201]))
+length(unique(paths50[,200]))
+length(unique(paths50[,170]))
+length(unique(paths50[,160]))
+length(unique(paths50[,154]))
+length(unique(paths50[,100]))
+length(unique(paths50[,20]))
+length(unique(paths50[,1]))
+
+######
+#Question 2b
+######
+
+unique_particles <- function(samples, weights){
+  # samples: 50 x 201 matrix
+  # weights: same size
+  
+  n_particles <- nrow(samples)
+  n_steps <- ncol(samples)
+  unique_counts <- numeric(n_steps)
+  
+  for (k in 1:n_steps){
+    weightsk <- weights[, k]
+    resamples <- sample(1:n_particles, size = n_particles,
+                        replace = TRUE, prob = weightsk)
+    resampled_values <- samples[resamples, k]
+    unique_counts[k] <- length(unique(resampled_values))
+  }
+  return(unique_counts)
+}
+
+plot(1:201, unique_particles(unweighted_sir50, ffbsm_weights1),
+     xlab="Time",
+     ylab="Number of Unique particles")
+```
+
+```{r}
+#| echo: true
+#| eval: false
+
+######
+#Question 1 Part 3 Plot 1
+######
+
+smooth_mean <- function(samples, back_weights){
+  colSums(samples * back_weights)
+}
+
+
+EX_smooth <- colMeans(paths50)
+EX_smooth_ffbsm <- smooth_mean(unweighted_sir50, ffbsm_weights1)
+EX_filter <- colMeans(SIR50$samples)
+
+par(mfrow = c(1, 2))
+
+plot(1:201, EX_filter, type="l", lwd=2,
+     xlab="Time", ylab="Expectation",
+     ylim = range(c(EX_filter, EX_smooth, x)),
+     col="blue")
+
+lines(1:201, EX_smooth_ffbsm, col="green", lwd=2)
+lines(1:201, EX_smooth, col="black", lwd=2)
+lines(1:201, x, col="red", lty=2, lwd=2)
+
+var_calc <- function(samples){
+  apply(samples, 2, var)
+}
+
+VAR_filter_50 <- var_calc(sir50)
+VAR_smooth_paths50 <- var_calc(paths50)
+
+smooth_var <- function(samples, weights){
+  means <- colSums(samples * weights)
+  vars <- colSums(weights * (samples - matrix(means, 
+                    nrow=nrow(samples), 
+                    ncol=ncol(samples), 
+                    byrow=TRUE))^2)
+  return(vars)
+}
+
+VAR_smooth_ffbsm_50 <- smooth_var(unweighted_sir50, ffbsm_weights1)
+
+plot(1:201, VAR_filter_50, type="l", lwd=2,
+     xlab="Time", ylab="Variance",
+     ylim = range(c(VAR_filter_50,
+                    VAR_smooth_paths50,
+                    VAR_smooth_ffbsm_50)),
+     col="blue")
+
+lines(1:201, VAR_smooth_ffbsm_50, col="green", lwd=2)
+lines(1:201, VAR_smooth_paths50, col="black", lwd=2)
+
+
+legend("topright",
+       legend=c("Filter Var", "SIR Smooth Var", "FFBSm Smooth Var"),
+       col=c("blue","black","green"),
+       lwd=2)
+       
+######
+#Question 1 part 3 plot 2 (N=500)
+######
+
+paths500 <- path_generator(SIR500$ancestors, SIR500$samples)
+
+
+EX_smooth500 <- colMeans(paths500)
+EX_smooth_ffbsm500 <- smooth_mean(unweighted_sir500, ffbsm_weights2)
+EX_filter500 <- colMeans(SIR500$samples)
+
+par(mfrow = c(1, 2))
+plot(1:201, EX_smooth500, type="l", lwd=2,
+     xlab="Time", ylab="Expectation",
+     ylim = range(c(EX_filter500, EX_smooth500, x)),
+     col="blue")
+
+lines(1:201, EX_smooth_ffbsm500, col="green", lwd=2)
+lines(1:201, EX_smooth500, col="black", lwd=2)
+lines(1:201, x, col="red", lty=2, lwd=2)
+
+VAR_filter_500 <- var_calc(sir500)
+VAR_smooth_paths500 <- var_calc(paths500)
+VAR_smooth_ffbsm_500 <- smooth_var(unweighted_sir500, ffbsm_weights2)
+
+plot(1:201, VAR_filter_500, type="l", lwd=2,
+     xlab="Time", ylab="Variance",
+     ylim = range(c(VAR_filter_500,
+                    VAR_smooth_paths500,
+                    VAR_smooth_ffbsm_500)),
+     col="blue")
+
+lines(1:201, VAR_smooth_ffbsm_500, col="green", lwd=2)
+lines(1:201, VAR_smooth_paths500, col="black", lwd=2)
+
+
+legend("topright",
+       legend=c("Filter Var", "SIR Smooth Var", "FFBSm Smooth Var"),
+       col=c("blue","black","green"),
+       lwd=2)
+```
+
+```{r}
+#| echo: true
+#| eval: false
+
+#####
+# Question 1 Part 6
+#####
+
+set.seed(10)
+
+# Estimate additive functional from reconstructed SIR paths
+additive_path_estimator <- function(paths){
+  mean(rowSums(paths))
+}
+
+# Estimate additive functional from FFBSm marginal smoothing weights
+additive_ffbsm_estimator <- function(samples, smooth_weights){
+  sum(colSums(samples * smooth_weights))
+}
+
+# Values of n to check
+n_vals <- c(10,50,100,150,200)
+
+# Total independent runs
+M <- 50
+N <- 50
+T <- 200
+
+# Store estimates:
+# rows = independent runs, columns = n values
+sir_estimates_mat <- matrix(NA, nrow = M, ncol = length(n_vals))
+ffbsm_estimates_mat <- matrix(NA, nrow = M, ncol = length(n_vals))
+
+for (m in 1:M) {
+  
+  # One particle filter run up to T = 200
+  pf <- SIR(N, T)
+  for (idx in seq_along(n_vals)) {
+    n <- n_vals[idx]
+    cols <- 1:(n + 1)
+  
+    # SIR path-space estimator
+    
+    paths_prefix <- path_generator(
+      anc = pf$ancestors[, cols, drop = FALSE],
+      samples = pf$samples[, cols, drop = FALSE]
+    )
+    
+    sir_estimates_mat[m, idx] <- additive_path_estimator(paths_prefix)
+    
+    # FFBSm estimator
+    
+    # Apply FFBSm only to the particle system up to time n,
+    # so the target is p(x_0:n | y_0:n), not p(x_0:n | y_0:T)
+    bw_prefix <- ffbsm(
+      samples = pf$unweighted[, cols, drop = FALSE],
+      weights = pf$sample_weights[, cols, drop = FALSE]
+    )
+    
+    ffbsm_estimates_mat[m, idx] <- additive_ffbsm_estimator(
+      samples = pf$unweighted[, cols, drop = FALSE],
+      smooth_weights = bw_prefix
+    )
+  }
+}
+
+# Empirical variances over the 50 independent runs
+sir_vars <- apply(sir_estimates_mat, 2, var)
+ffbsm_vars <- apply(ffbsm_estimates_mat, 2, var)
+
+variance_results <- data.frame(
+  n = n_vals,
+  SIR_Variance = sir_vars,
+  FFBSm_Variance = ffbsm_vars
+)
+
+#PLOTS (and tables)
+
+kable(
+  variance_results,
+  digits = 3
+) 
+
+
+# Plot
+par(mfrow = c(1,1))
+
+plot(
+  variance_results$n,
+  variance_results$SIR_Variance,
+  type = "b",
+  pch = 19,
+  lwd = 2,
+  col = "black",
+  ylim = range(c(
+    variance_results$SIR_Variance,
+    variance_results$FFBSm_Variance
+  )),
+  xlab = "n",
+  ylab = "Empirical Variance"
+)
+
+lines(
+  variance_results$n,
+  variance_results$FFBSm_Variance,
+  type = "b",
+  pch = 17,
+  lwd = 2,
+  col = "darkgreen"
+)
+
+legend(
+  "topleft",
+  legend = c("Path-space / SIR estimator", "FFBSm estimator"),
+  col = c("black", "darkgreen"),
+  pch = c(19,17),
+  lwd = 2
+)
+```
+
+```{r}
+#| echo: true
+#| eval: false
+
+##########
+#QUESTION 2
+##########
+
+#Synthesising new dataset
+
+set.seed(6)
+
+rho=0.8
+tau=0.5
+
+x <- rep(0,101)
+y1 <- rep(0,101)
+y2 <- rep(0,101)
+
+x[1] <- rnorm(1)
+w0 <- rnorm(1)
+y1[1] <- x[1]+w0
+y2[1] <- x[1] + exp(x[1]/2)*w0
+
+for (i in 2:101){
+  v_i <- rnorm(1)
+  w_i <- rnorm(1)
+  x[i] <- rho*x[i-1]+tau*v_i
+  y1[i] <- x[i] + w_i
+  y2[i] <- x[i] + exp(x[i]/2)*w_i
+}
+
+##
+#1a
+##
+
+N<-500
+
+#log marginal likelihood of y1 under Model 1
+#using Kalman Filter to compute p_{\theta}(y_{0:n})
+
+kalman_loglik_model1 <- function(y, sigma2, rho, tau) {
+  m <- 0
+  C <- 1
+  loglik <- 0
+  
+  for (n in seq_along(y)) {
+    Q <- C + sigma2
+    loglik <- loglik + dnorm(y[n], mean = m, sd = sqrt(Q), log = TRUE)
+    
+    K <- C / Q
+    m <- m + K * (y[n] - m)
+    C <- C - K * C
+    
+    if (n < length(y)) {
+      m <- rho * m
+      C <- rho^2 * C + tau^2
+    }
+  }
+  
+  return(loglik)
+}
+
+#the log functions are for numerical stability
+#as without them I was running into integer underflow problems
+log_sum_exp <- function(logw) {
+  m <- max(logw)
+  return(m + log(sum(exp(logw - m))))
+}
+
+log_mean_exp <- function(logw) {
+  return(log_sum_exp(logw) - log(length(logw)))
+}
+
+particle_loglik <- function(y, sigma2, rho, tau, N, model = 1) {
+  x_particles <- rnorm(N, mean = 0, sd = 1)
+  if (model == 1) {
+    obs_sd <- sqrt(sigma2)
+  } else {
+    obs_sd <- sqrt(sigma2) * exp(x_particles / 2)
+  }
+  logw <- dnorm(y[1], mean = x_particles, sd = obs_sd, log = TRUE)
+  #As we are using bootstrap, the weights are just the likelihood
+  
+  loglik <- log_mean_exp(logw)
+  weights <- exp(logw - log_sum_exp(logw))
+  
+  for (n in 2:length(y)) {
+    ancestors <- sample(1:N, size = N, replace = TRUE, prob = weights)
+    x_particles <- rho * x_particles[ancestors] + tau * rnorm(N)
+    
+    if (model == 1) {
+      obs_sd <- sqrt(sigma2)
+    } else {
+      obs_sd <- sqrt(sigma2) * exp(x_particles / 2)
+    }
+    
+    logw <- dnorm(y[n], mean = x_particles, sd = obs_sd, log = TRUE)
+    
+    loglik <- loglik + log_mean_exp(logw)
+    weights <- exp(logw - log_sum_exp(logw))
+  }
+  
+  return(loglik)
+}
+
+## Grid over sigma^2
+sigma2_grid <- seq(0.01, 2, length.out = 200)
+
+exact_m1_y1 <- numeric(length(sigma2_grid))
+pf_m1_y1 <- numeric(length(sigma2_grid))
+pf_m2_y1 <- numeric(length(sigma2_grid))
+
+for (i in seq_along(sigma2_grid)) {
+  s2 <- sigma2_grid[i]
+  
+  exact_m1_y1[i] <- kalman_loglik_model1(y1, s2, rho, tau)
+  pf_m1_y1[i] <- particle_loglik(y1, s2, rho, tau, N, model = 1)
+  pf_m2_y1[i] <- particle_loglik(y1, s2, rho, tau, N, model = 2)
+}
+
+
+## Plot
+plot(
+  sigma2_grid, exact_m1_y1,
+  type = "l", lwd = 2,
+  xlab = expression(sigma^2),
+  ylab = "log-likelihood"
+)
+
+lines(sigma2_grid, pf_m1_y1, lwd = 2, lty = 2)
+lines(sigma2_grid, pf_m2_y1, lwd = 2, lty = 3, col="darkgreen")
+
+abline(v = 1, col = "blue", lty = 1)
+
+legend(
+  "topright",
+  legend = c(
+    expression(log~p[sigma^2*",1"]~(y[0:T]^1)),
+    expression(log~p[sigma^2*",1"]^N~(y[0:T]^1)),
+    expression(log~p[sigma^2*",2"]^N~(y[0:T]^1))
+  ),
+  lty = c(1, 2, 3, 4),
+  lwd = c(2, 2, 2, 1),
+  col = c("black", "black", "darkgreen"),
+  bty = "n"
+)
+
+
+
+mle_exact_m1_y1 <- sigma2_grid[which.max(exact_m1_y1)]
+mle_pf_m1_y1 <- sigma2_grid[which.max(pf_m1_y1)]
+mle_pf_m2_y1 <- sigma2_grid[which.max(pf_m2_y1)]
+
+mle_table_y1 <- data.frame(
+  Likelihood = c(
+    "$\\log p_{\\sigma^2,1}(y^1_{0:T})$",
+    "$\\log p^N_{\\sigma^2,1}(y^1_{0:T})$",
+    "$\\log p^N_{\\sigma^2,2}(y^1_{0:T})$"
+  ),
+  Method = c(
+    "Exact Kalman filter",
+    "Particle filter, Model 1",
+    "Particle filter, Model 2"
+  ),
+  `$\\hat{\\sigma}^2$` = round(
+    c(mle_exact_m1_y1, mle_pf_m1_y1, mle_pf_m2_y1),
+    4
+  ),
+  check.names = FALSE
+)
+
+knitr::kable(
+  mle_table_y1,
+  format = "pipe",
+  escape = FALSE,
+  align = c("l", "l", "c")
+)
+
+####
+#1b
+####
+
+exact_m1_y2 <- numeric(length(sigma2_grid))
+pf_m1_y2 <- numeric(length(sigma2_grid))
+pf_m2_y2 <- numeric(length(sigma2_grid))
+
+for (i in seq_along(sigma2_grid)) {
+  s2 <- sigma2_grid[i]
+  
+  exact_m1_y2[i] <- kalman_loglik_model1(y2, s2, rho, tau)
+  pf_m1_y2[i] <- particle_loglik(y2, s2, rho, tau, N, model = 1)
+  pf_m2_y2[i] <- particle_loglik(y2, s2, rho, tau, N, model = 2)
+}
+
+
+## Plot
+plot(
+  sigma2_grid, exact_m1_y2,
+  type = "l", lwd = 2,
+  xlab = expression(sigma^2),
+  ylab = "log-likelihood"
+)
+
+lines(sigma2_grid, pf_m1_y2, lwd = 2, lty = 2)
+lines(sigma2_grid, pf_m2_y2, lwd = 2, lty = 3, col="darkgreen")
+
+abline(v = 1, col = "blue", lty = 1)
+
+legend(
+  "topright",
+  legend = c(
+    expression(log~p[sigma^2*",1"]~(y[0:T]^2)),
+    expression(log~p[sigma^2*",1"]^N~(y[0:T]^2)),
+    expression(log~p[sigma^2*",2"]^N~(y[0:T]^2))
+  ),
+  lty = c(1, 2, 3, 4),
+  lwd = c(2, 2, 2, 1),
+  col = c("black", "black", "darkgreen"),
+  bty = "n"
+)
+
+mle_exact_m1_y2 <- sigma2_grid[which.max(exact_m1_y2)]
+mle_pf_m1_y2 <- sigma2_grid[which.max(pf_m1_y2)]
+mle_pf_m2_y2 <- sigma2_grid[which.max(pf_m2_y2)]
+
+mle_table_y2 <- data.frame(
+  Likelihood = c(
+    "$\\log p_{\\sigma^2,1}(y^2_{0:T})$",
+    "$\\log p^N_{\\sigma^2,1}(y^2_{0:T})$",
+    "$\\log p^N_{\\sigma^2,2}(y^2_{0:T})$"
+  ),
+  Method = c(
+    "Exact Kalman filter",
+    "Particle filter, Model 1",
+    "Particle filter, Model 2"
+  ),
+  `$\\hat{\\sigma}^2$` = round(
+    c(mle_exact_m1_y2, mle_pf_m1_y2, mle_pf_m2_y2),
+    4
+  ),
+  check.names = FALSE
+)
+
+knitr::kable(
+  mle_table_y2,
+  format = "pipe",
+  escape = FALSE,
+  align = c("l", "l", "c")
+)
+
+```
+
+```{r}
+#| echo: true
+#| eval: false
+
+#Discussion of the Results
+
+plot(x, type = "l", lwd = 2, ylim = range(c(x, y1, y2)),
+     xlab = "n", ylab = "value")
+lines(y1, col = "blue")
+lines(y2, col = "darkgreen")
+legend("topright",
+       legend = c("x*", "y1", "y2"),
+       col = c("black", "blue", "darkgreen"),
+       lty = 1, lwd = c(2, 1, 1),
+       bty = "n")
+simulate_obs_given_x <- function(x, sigma2, model = 1) {
+  if (model == 1) {
+    y_sim <- x + sqrt(sigma2) * rnorm(length(x))
+  } else {
+    y_sim <- x + sqrt(sigma2) * exp(x / 2) * rnorm(length(x))
+  }
+  return(y_sim)
+}
+
+B <- 100
+
+sim_y1_m1 <- replicate(B, simulate_obs_given_x(x, mle_exact_m1_y1, model = 1))
+sim_y1_m2 <- replicate(B, simulate_obs_given_x(x, mle_pf_m2_y1, model = 2))
+
+sim_y2_m1 <- replicate(B, simulate_obs_given_x(x, mle_exact_m1_y2, model = 1))
+sim_y2_m2 <- replicate(B, simulate_obs_given_x(x, mle_pf_m2_y2, model = 2))
+
+plot_sim_envelope <- function(y_obs, sims, main = "") {
+  lower <- apply(sims, 1, quantile, 0.025)
+  upper <- apply(sims, 1, quantile, 0.975)
+  
+  plot(y_obs, type = "l", lwd = 2,
+       ylim = range(c(y_obs, lower, upper)),
+       xlab = "n", ylab = "y",
+       main = main)
+  lines(lower, lty = 3)
+  lines(upper, lty = 3)
+}
+
+par(mfrow = c(1, 2))
+plot_sim_envelope(y1, sim_y1_m1, "y1 fitted with Model 1")
+plot_sim_envelope(y1, sim_y1_m2, "y1 fitted with Model 2")
+
+par(mfrow = c(1, 2))
+plot_sim_envelope(y2, sim_y2_m1, "y2 fitted with Model 1")
+plot_sim_envelope(y2, sim_y2_m2, "y2 fitted with Model 2")
+
+## Question 2 Part 4: Particle EM for Model 2
+
+transition_density <- function(x_next, x_prev, rho, tau) {
+  dnorm(x_next, mean = rho * x_prev, sd = tau)
+}
+
+#Finding particle approximation of p(x_{0:n}|y_{0:n})
+
+#Basic SIR algorithm
+bootstrap_pf_model2_store <- function(y, sigma2, rho, tau, N) {
+  Tlen <- length(y)
+  particles <- matrix(0, nrow = N, ncol = Tlen)
+  weights <- matrix(0, nrow = N, ncol = Tlen)
+  ancestors <- matrix(0, nrow = N, ncol = Tlen)
+  
+  ## time 0
+  particles[, 1] <- rnorm(N, mean = 0, sd = 1)
+  logw <- dnorm(
+    y[1],
+    mean = particles[, 1],
+    sd = sqrt(sigma2) * exp(particles[, 1] / 2),
+    log = TRUE
+  )
+  weights[, 1] <- exp(logw - log_sum_exp(logw))
+  ancestors[, 1] <- 1:N
+  
+  ## times 1,...,T
+  for (n in 2:Tlen) {
+    ancestors[, n] <- sample(1:N, size = N, replace = TRUE, 
+                             prob = weights[, n - 1])
+    particles[, n] <- rho * particles[ancestors[, n], n - 1] + tau * rnorm(N)
+    
+    logw <- dnorm(
+      y[n],
+      mean = particles[, n],
+      sd = sqrt(sigma2) * exp(particles[, n] / 2),
+      log = TRUE
+    )
+    weights[, n] <- exp(logw - log_sum_exp(logw))
+  }
+  
+  return(list(
+    particles = particles,
+    weights = weights,
+    ancestors = ancestors
+  ))
+}
+
+#Computing the expectation statistic for the EM update
+#With SIR we reconstruct paths (like Q1 part 2)
+#-and use the final weights as the weights for the entire path
+sir_em_statistic <- function(pf, y) {
+  particles <- pf$particles
+  weights <- pf$weights
+  ancestors <- pf$ancestors
+  
+  N <- nrow(particles)
+  Tlen <- ncol(particles)
+  
+  vals <- numeric(N)
+  
+  for (i in 1:N) {
+    path <- numeric(Tlen)
+    idx <- i
+    
+    for (n in Tlen:1) {
+      path[n] <- particles[idx, n]
+      idx <- ancestors[idx, n]
+    }
+    
+    vals[i] <- sum((y - path)^2 * exp(-path))
+  }
+  
+  return(sum(weights[, Tlen] * vals))
+}
+
+#The FFBSm algorithm works similarly to Question 1
+ffbsm_em_statistic <- function(pf, y, rho, tau) {
+  particles <- pf$particles
+  weights <- pf$weights
+  
+  N <- nrow(particles)
+  Tlen <- ncol(particles)
+  
+  smooth_weights <- matrix(0, nrow = N, ncol = Tlen)
+  smooth_weights[, Tlen] <- weights[, Tlen]
+  
+  for (n in (Tlen - 1):1) {
+    
+    ## transition_matrix[i, j] = f(x_{n+1}^j | x_n^i)
+    transition_matrix <- outer(
+      particles[, n],
+      particles[, n + 1],
+      function(x_prev, x_next) {
+        dnorm(x_next, mean = rho * x_prev, sd = tau)
+      }
+    )
+    
+    ## denominator for each future particle j
+    denom <- as.vector(weights[, n] %*% transition_matrix)
+    
+    ## avoid division by zero
+    denom[denom == 0] <- .Machine$double.xmin
+    
+    ## backward smoothing update
+    backward_terms <- transition_matrix %*% (smooth_weights[, n + 1] / denom)
+    
+    smooth_weights[, n] <- weights[, n] * backward_terms
+    smooth_weights[, n] <- smooth_weights[, n] / sum(smooth_weights[, n])
+  }
+  
+  stat <- 0
+  
+  for (n in 1:Tlen) {
+    h <- (y[n] - particles[, n])^2 * exp(-particles[, n])
+    stat <- stat + sum(smooth_weights[, n] * h)
+  }
+  
+  return(stat)
+}
+
+set.seed(12)
+
+N_em <- 100
+n_iter <- 100
+
+sigma2_sir <- numeric(n_iter + 1)
+sigma2_ffbsm <- numeric(n_iter + 1)
+
+sigma2_sir[1] <- 0.5 #initial values for the algorithm
+sigma2_ffbsm[1] <- 0.5
+
+for (k in 1:n_iter) {
+  pf_sir <- bootstrap_pf_model2_store(y2, sigma2_sir[k], rho, tau, N_em)
+  S_sir <- sir_em_statistic(pf_sir, y2)
+  sigma2_sir[k + 1] <- S_sir / length(y2)
+  
+  pf_ffbsm <- bootstrap_pf_model2_store(y2, sigma2_ffbsm[k], rho, tau, N_em)
+  S_ffbsm <- ffbsm_em_statistic(pf_ffbsm, y2, rho, tau)
+  sigma2_ffbsm[k + 1] <- S_ffbsm / length(y2)
+}
+
+plot(
+  0:n_iter, sigma2_sir,
+  type = "l", lwd = 2,
+  xlab = "EM iteration",
+  ylab = expression(sigma^2),
+  ylim = range(c(sigma2_sir, sigma2_ffbsm, 1))
+)
+
+lines(0:n_iter, sigma2_ffbsm, lwd = 2, lty = 2, col = "darkgreen")
+abline(h = 1, col = "blue", lty = 3)
+
+legend(
+  "topright",
+  legend = c("SIR genealogies", "FFBSm", "True value"),
+  col = c("black", "darkgreen", "blue"),
+  lty = c(1, 2, 3),
+  lwd = c(2, 2, 1),
+  bty = "n"
+)
+
+final_em_table <- data.frame(
+  Method = c("SIR genealogies", "FFBSm"),
+  `Final estimate of sigma squared` = round(c(tail(sigma2_sir, 1), tail(sigma2_ffbsm, 1)), 4),
+  check.names = FALSE
+)
+
+knitr::kable(final_em_table, format = "pipe")
+```
+
+```{r}
+#| echo: true
+#| eval: false
+
+#####
+#QUESTION 3
+######
+
+#Simulating the Data
+data <- read.csv('data.csv', header=FALSE)
+y3 <- as.numeric(data$V1[1:1000])
+
+
+
+T<- 1000
+
+#Inverse Gamma Prior function
+
+rig <- function(shape, scale) {
+  1 / rgamma(1, shape = shape, rate = scale)
+}
+
+#Also to make sure the proposals are on the same scale as the priors
+#I transform the priors to a different scale before new values are proposed
+#These two helper functions help me do that
+
+theta_to_z <- function(theta) {
+  c(atanh(theta[1]), log(theta[2]), log(theta[3]))
+}
+
+z_to_theta <- function(z) {
+  c(tanh(z[1]), exp(z[2]), exp(z[3]))
+}
+
+dig <- function(x, shape, scale, log = TRUE) {
+  out <- shape * log(scale) - lgamma(shape) -
+    (shape + 1) * log(x) - scale / x
+  
+  out[x <= 0] <- -Inf
+  
+  if (log) out else exp(out)
+}
+
+#The prior of theta is used in the acceptance ratio
+log_prior_theta <- function(theta) {
+  rho <- theta[1]
+  sigma2 <- theta[2]
+  beta2 <- theta[3]
+  
+  if (rho <= -1 || rho >= 1 || sigma2 <= 0 || beta2 <= 0) {
+    return(-Inf)
+  }
+  
+  ## rho ~ U(-1,1)
+  lp_rho <- -log(2)
+  lp_sigma <- dig(sigma2, shape = 1, scale = 1, log = TRUE)
+  lp_beta <- dig(beta2, shape = 1, scale = 1, log = TRUE)
+  
+  lp_rho + lp_sigma + lp_beta #by independence of the individual priors
+}
+
+#Different on a transformed scale
+
+log_jacobian <- function(theta) {
+  rho <- theta[1]
+  sigma2 <- theta[2]
+  beta2 <- theta[3]
+  
+  if (abs(rho) >= 1 || sigma2 <= 0 || beta2 <= 0) {
+    return(-Inf)
+  }
+  
+  log(1 - rho^2) + log(sigma2) + log(beta2) #determinant of jacobian matrix
+}
+
+## Posterior density on transformed scale
+log_prior_z <- function(z) {
+  theta <- z_to_theta(z)
+  log_prior_theta(theta) + log_jacobian(theta)
+}
+
+
+#We repeatedly estimate the likelihood using an SIR algorithm,
+#So I made it a function
+
+bootstrap_pf_loglik <- function(y, theta, Np = 500) {
+  rho <- theta[1]
+  sigma2 <- theta[2]
+  beta2 <- theta[3]
+  
+  if (rho <= -1 || rho >= 1 || sigma2 <= 0 || beta2 <= 0) {
+    return(-Inf)
+  }
+  
+  sigma <- sqrt(sigma2)
+  
+  ## Initial particles X_0 ~ N(0, 0.01)
+  x_particles <- rnorm(Np, mean = 0, sd = sqrt(0.01))
+  
+  loglik <- 0
+  
+  for (n in 1:1000) {
+    
+    ## Propagate: X_n | X_{n-1}
+    x_particles <- rnorm(Np, mean = rho * x_particles, sd = sigma)
+    
+    ## Observation density:
+    ## y_n | x_n ~ N(0, beta2 * exp(x_n))
+    obs_var <- beta2 * exp(x_particles)
+    log_w <- dnorm(y[n], mean = 0, sd = sqrt(obs_var), log = TRUE)
+    
+    ## Incremental likelihood estimate
+    loglik <- loglik + log(mean(exp(log_w)))
+    
+    ## Normalise weights
+    w <- exp(log_w)
+    w <- w / sum(w)
+    
+    ## Resample (Multinomial)
+    ancestors <- sample(seq_len(Np), size = Np, replace = TRUE, prob = w)
+    x_particles <- x_particles[ancestors]
+  }
+  
+  return(loglik)
+}
+
+
+pmmh <- function(y,iter, Np, proposal_sd = c(0.01, 0.03, 0.05)){
+  set.seed(17)
+  samples_theta <- matrix(NA, nrow = iter, ncol = 3)
+  colnames(samples_theta) <- c("rho", "sigma2", "beta2")
+  accept <- logical(iter) #to calculate acceptance rate of my algorithm
+  
+  init_theta <- c(
+    runif(1, -0.99, 0.99), #starting here to make sure there aren't issues with
+    #-arctan in the transformation
+    rig(1, 1),
+    rig(1, 1)
+  )
+  
+  z_curr <- theta_to_z(init_theta) #for proposal
+  theta_curr <- init_theta
+  
+  #These feature in the denominator of the acceptance ratio
+  loglik_curr <- bootstrap_pf_loglik(y, init_theta, Np=Np)
+  logpost_curr <- loglik_curr + log_prior_z(z_curr)
+  
+  loglik_store <- numeric(iter)
+  loglik_store[1] <- loglik_curr
+  samples_theta[1, ] <- init_theta
+  
+  
+  for (k in 2:iter){
+    ## Propose on transformed scale
+    z_prop <- z_curr + rnorm(3, mean = 0, sd = proposal_sd)
+    theta_prop <- z_to_theta(z_prop)
+    
+    ## Particle likelihood estimate
+    loglik_prop <- bootstrap_pf_loglik(y, theta_prop, Np = Np)
+    logpost_prop <- loglik_prop + log_prior_z(z_prop)
+    
+    ## Symmetric random walk on z scale, so proposal ratio cancels
+    log_alpha <- logpost_prop - logpost_curr #(acceptance ratio)
+    
+    if (log(runif(1)) < log_alpha) {
+      z_curr <- z_prop
+      theta_curr <- theta_prop
+      loglik_curr <- loglik_prop
+      logpost_curr <- logpost_prop
+      accept[k] <- TRUE
+    }
+    
+    samples_theta[k, ] <- theta_curr
+    loglik_store[k] <- loglik_curr
+  }
+  list(
+    samples = as.data.frame(samples_theta),
+    acceptance_rate = mean(accept[-1])
+  )
+}
+
+
+## ------------------------------------------------------------
+## Running the PMMH algorithm
+## ------------------------------------------------------------
+
+#| echo: false
+
+if (!file.exists("pmmh_out.rds")) { 
+  #so i don't need to rerun this algorithm when rendering multiple times
+  pmmh_out <- pmmh(
+    y = y3,
+    iter = 10000,
+    Np = 500
+  )
+  saveRDS(pmmh_out, "pmmh_out.rds")
+} else {
+  pmmh_out <- readRDS("pmmh_out.rds")
+} 
+
+pmmh_out$acceptance_rate
+
+## ------------------------------------------------------------
+## Burn-in
+
+burn <- floor(0.25 * nrow(pmmh_out$samples))
+post <- pmmh_out$samples[(burn + 1):nrow(pmmh_out$samples), ]
+
+## ------------------------------------------------------------
+## Marginal posterior density plots
+## ------------------------------------------------------------
+
+par(mfrow = c(1, 3))
+
+plot(density(post$rho),
+     main = expression("Posterior density of " * rho),
+     xlab = expression(rho),
+     lwd = 2)
+
+plot(density(post$sigma2),
+     main = expression("Posterior density of " * sigma^2),
+     xlab = expression(sigma^2),
+     lwd = 2)
+
+plot(density(post$beta2),
+     main = expression("Posterior density of " * beta^2),
+     xlab = expression(beta^2),
+     lwd = 2)
+
 ## ------------------------------------------------------------
 ## Trace plots
 ## ------------------------------------------------------------
@@ -1876,17 +3464,195 @@ plot(pmmh_out$samples$beta2,
 
 abline(v = burn, lty = 2)
 
-par(mfrow = c(1, 1))
+library(coda)
 
+ess_table <- data.frame(
+  Parameter = c("rho", "sigma2", "beta2"),
+  ESS = c(
+    effectiveSize(post$rho),
+    effectiveSize(post$sigma2),
+    effectiveSize(post$beta2)
+  )
+)
 
+knitr::kable(ess_table, digits = 2)
+
+#####
+# Question 3 Part 4: Posterior predictive credible intervals
+#####
+
+set.seed(20)
+
+## Full data-set
+data_full <- read.csv("data.csv", header = FALSE)
+y_all <- as.numeric(data_full$V1)
+
+## Training data used in PMMH
+T_train <- 1000
+y_train <- y_all[1:T_train]
+
+## Future observations to compare against
+y_future_true <- y_all[(T_train + 1):length(y_all)]
+H <- length(y_future_true)
+
+## Number of posterior predictive trajectories
+M_pred <- min(1000, nrow(post))
+
+## Thin/sample posterior draws to reduce computation
+post_idx <- sample(seq_len(nrow(post)), size = M_pred, replace = FALSE)
+post_pred <- post[post_idx, ]
+
+## Particle filter that returns final particles and weights,
+## rather than only the likelihood estimate like previously
+
+bootstrap_pf_final_particles <- function(y, theta, Np = 500) {
+  rho <- theta[1]
+  sigma2 <- theta[2]
+  beta2 <- theta[3]
+
+  ## Initial particles X_0 ~ N(0, 0.01)
+  x_particles <- rnorm(Np, mean = 0, sd = sqrt(0.01))
+  
+  for (n in seq_along(y)) {
+    
+    ## Propagate X_n | X_{n-1}
+    x_particles <- rnorm(
+      Np,
+      mean = rho * x_particles,
+      sd = sqrt(sigma2)
+    )
+    
+    ## Observation density y_n | x_n
+    obs_sd <- sqrt(beta2 * exp(x_particles))
+    
+    log_w <- dnorm(
+      y[n],
+      mean = 0,
+      sd = obs_sd,
+      log = TRUE
+    )
+    
+    ## Normalise weights stably
+    log_w <- log_w - max(log_w)
+    w <- exp(log_w)
+    w <- w / sum(w)
+    
+    ## Resample unless this is the final time
+    if (n < length(y)) {
+      ancestors <- sample(seq_len(Np), size = Np, replace = TRUE, prob = w)
+      x_particles <- x_particles[ancestors]
+    }
+  }
+  
+  return(list(
+    particles = x_particles,
+    weights = w
+  ))
+}
+
+simulate_predictive_trajectory <- function(theta, y_train, H, Np = 500) {
+  rho <- theta[1]
+  sigma2 <- theta[2]
+  beta2 <- theta[3]
+  
+  ## Approximate p(x_T | y_1:T, theta)
+  pf <- bootstrap_pf_final_particles(y_train, theta, Np = Np)
+  
+  ## Sample X_T from the final weighted particle system
+  x_curr <- sample(
+    pf$particles,
+    size = 1,
+    replace = TRUE,
+    prob = pf$weights
+  )
+  
+  y_future <- numeric(H)
+  
+  for (h in 1:H) {
+    
+    ## Simulate X_{T+h}
+    x_curr <- rnorm(
+      1,
+      mean = rho * x_curr,
+      sd = sqrt(sigma2)
+    )
+    
+    ## Simulate Y_{T+h}
+    y_future[h] <- rnorm(
+      1,
+      mean = 0,
+      sd = sqrt(beta2 * exp(x_curr))
+    )
+  }
+  
+  return(y_future)
+}
+
+## Generate posterior predictive trajectories
+## Rows are posterior predictive draws, columns are future times.
+
+if (!file.exists("q3_predictive_draws.rds")) {
+  
+  y_pred_draws <- matrix(NA, nrow = M_pred, ncol = H)
+  
+  for (m in 1:M_pred) {
+    theta_m <- c(
+      post_pred$rho[m],
+      post_pred$sigma2[m],
+      post_pred$beta2[m]
+    )
+    
+    y_pred_draws[m, ] <- simulate_predictive_trajectory(
+      theta = theta_m,
+      y_train = y_train,
+      H = H,
+      Np = 500
+    )
+  }
+  
+  saveRDS(y_pred_draws, "q3_predictive_draws.rds")
+  
+} else {
+  
+  y_pred_draws <- readRDS("q3_predictive_draws.rds")
+  
+}
+
+pred_mean <- colMeans(y_pred_draws)
+
+pred_lower_99 <- apply(y_pred_draws, 2, quantile, probs = 0.005)
+pred_upper_99 <- apply(y_pred_draws, 2, quantile, probs = 0.995)
+
+future_times <- (T_train + 1):length(y_all)
+
+plot(
+  future_times,
+  y_future_true,
+  type = "l",
+  lwd = 1,
+  col = "black",
+  ylim = range(c(y_future_true, pred_lower_99, pred_upper_99, pred_mean)),
+  xlab = "Time n",
+  ylab = expression(Y[n]),
+  main = "Posterior predictive distribution"
+)
+
+lines(future_times, pred_mean, col = adjustcolor("red", alpha.f = 0.3), lwd = 2)
+
+lines(future_times, pred_lower_99, col = "darkgreen", lwd = 2, lty = 2)
+lines(future_times, pred_upper_99, col = "darkgreen", lwd = 2, lty = 2)
+
+legend(
+  "topright",
+  legend = c("True future data", "Posterior predictive mean", "99% credible interval"),
+  col = c("black", "red", "darkgreen"),
+  lty = c(1, 1, 2),
+  lwd = c(1, 2, 2),
+  bty = "n"
+)
 
 ```
 
-# Code Appendix {#sec-code-appendix}
 
-```{r ref.label=knitr::all_labels()}
-#| echo: true
-#| eval: false
-#| code-fold: true
 
-```
+
